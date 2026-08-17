@@ -47,27 +47,29 @@ conseguem usar — e que aguenta ser usado.
 - [ ] **[08 — Documentação viva com Swagger](./08-documentacao-da-api.md)**
       Gerar, a partir dos schemas que você já escreveu, uma documentação navegável que não
       consegue ficar desatualizada.
+- [ ] **[09 — Segurança HTTP](./09-seguranca-http.md)**
+      Derrubar a própria API com cinco linhas, e depois impedir isso — com limite de
+      requisições, controle de origem e os cabeçalhos que o navegador respeita.
 
 ---
 
 ## O que vem depois
 
-Esta trilha termina na Aula 08, com uma API que sobe, é padronizada por ferramenta, lê
+Esta trilha termina na Aula 09, com uma API que sobe, é padronizada por ferramenta, lê
 configuração validada, tem testes automatizados, não vaza informação interna, não confia no
-que chega de fora e se documenta sozinha.
+que chega de fora, se documenta sozinha e se defende de quem abusa dela.
 
 Os assuntos abaixo continuam a construção e ficam para uma **trilha avançada**. Não são
 "opcionais" — são os próximos degraus, e cada um só faz sentido depois de você ter sentido a
 dor que ele resolve:
 
-| Assunto                   | A dor que resolve                                                     |
-| :------------------------ | :-------------------------------------------------------------------- |
-| Segurança HTTP            | API pública sem limite de requisições cai com um script de dez linhas |
-| Docker                    | "Na minha máquina funciona"                                           |
-| Banco de dados com Prisma | Hoje nada é guardado: o dado morre quando o servidor reinicia         |
-| Integração contínua       | Nada garante que alguém rodou os testes antes de enviar o código      |
-| Branches e Pull Requests  | Todo mundo envia direto para a `main`, sem ninguém revisar            |
-| Autenticação com JWT      | Qualquer um acessa qualquer coisa                                     |
+| Assunto                   | A dor que resolve                                                |
+| :------------------------ | :--------------------------------------------------------------- |
+| Docker                    | "Na minha máquina funciona"                                      |
+| Banco de dados com Prisma | Hoje nada é guardado: o dado morre quando o servidor reinicia    |
+| Integração contínua       | Nada garante que alguém rodou os testes antes de enviar o código |
+| Branches e Pull Requests  | Todo mundo envia direto para a `main`, sem ninguém revisar       |
+| Autenticação com JWT      | Qualquer um acessa qualquer coisa                                |
 
 ---
 

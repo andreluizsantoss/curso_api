@@ -35,9 +35,24 @@ código que o servidor executa (JavaScript, em `dist/`). Comando: `npm run build
 
 ## C
 
+**Clickjacking** — Ataque em que um site coloca a página de outro dentro de uma moldura
+invisível e engana a pessoa para clicar onde ela não vê. O cabeçalho `x-frame-options`, que o
+Helmet liga, é o que impede a moldura de existir.
+
 **Código de saída** (_exit code_) — Número que um comando devolve ao terminar. **Zero
 significa sucesso**; qualquer outro número significa falha. É por isso que uma esteira de
 CI/CD consegue saber sozinha se o build passou.
+
+**CORS** (_Cross-Origin Resource Sharing_) — Regra que decide quais sites podem chamar uma API
+pelo navegador de alguém. **Não é um porteiro na entrada da API:** a API responde normalmente,
+com corpo e tudo, e apenas inclui — ou não — o cabeçalho `access-control-allow-origin`. Quem
+descarta a resposta é o **navegador**, na máquina da pessoa. Contra um programa que fale HTTP
+direto, o CORS não faz nada, e nunca teve essa pretensão: ele protege o cidadão, não o
+servidor.
+
+**CSP** (_Content Security Policy_) — Cabeçalho que restringe de onde uma página pode carregar
+script, estilo e imagem. É a defesa central contra script injetado. Vale para páginas; uma API
+que só responde JSON não tem página própria para proteger.
 
 **CommonJS** — Sistema antigo de módulos do Node, que usa `require()`. Este projeto **não**
 usa; usamos ESM.
@@ -113,6 +128,10 @@ linha). O nosso é o Prettier.
 **Handler** — Função encarregada de tratar uma situação específica. O `errorHandler` deste
 projeto é **global**: registrado uma vez em `buildApp()`, ele atende toda falha de toda rota,
 inclusive das que ainda nem foram escritas.
+
+**Helmet** — Conjunto de cabeçalhos de segurança que o navegador respeita, ligados de uma vez.
+Eles existem no navegador há anos e vêm **desligados** por omissão, para não quebrar sites
+antigos. Como CORS, é um pedido ao navegador: quem não for navegador ignora.
 
 **Health check** — Rota que responde "estou vivo" para ferramentas de monitoramento. Se ela
 parar de responder, o sistema de infraestrutura sabe que precisa reiniciar a aplicação.
@@ -206,6 +225,11 @@ não vê: o processo morre sem passar pelo seu log. É por isso que o `server.ts
 ---
 
 ## R
+
+**Rate limit** (limite de requisições) — Teto de quantas requisições um mesmo cliente pode
+fazer numa janela de tempo. Diferente de Helmet e CORS, é a **própria API** que recusa, então
+vale contra qualquer um. Neste projeto: 100 por minuto por IP, e 240 no `/health`, para não
+bloquear o monitoramento. Quem estoura recebe **429**.
 
 **Repository** — Camada que conversa com o banco de dados. Só entra e sai dado; **nenhuma**
 regra de negócio mora aqui.
