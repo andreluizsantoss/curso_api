@@ -36,13 +36,16 @@ Transformar "funciona na minha máquina" em código que aguenta o mundo real.
       Fazer o computador conferir se a API funciona, em vez de testar na mão toda vez.
 - [ ] **[06 — Tratamento centralizado de erros](./06-tratamento-de-erros.md)**
       Responder erro de forma consistente, sem nunca vazar detalhe interno para quem chamou.
+- [ ] **[07 — Validação de entrada e contrato de resposta](./07-validacao-e-contrato.md)**
+      Nunca confiar no que chega de fora, e devolver exatamente o que foi combinado.
 
 ---
 
 ## O que vem depois
 
-Esta trilha termina na Aula 06, com uma API que sobe, é padronizada por ferramenta, lê
-configuração validada, tem testes automatizados e não vaza informação interna.
+Esta trilha termina na Aula 07, com uma API que sobe, é padronizada por ferramenta, lê
+configuração validada, tem testes automatizados, não vaza informação interna e não confia no
+que chega de fora.
 
 Os assuntos abaixo continuam a construção e ficam para uma **trilha avançada**. Não são
 "opcionais" — são os próximos degraus, e cada um só faz sentido depois de você ter sentido a
@@ -50,7 +53,6 @@ dor que ele resolve:
 
 | Assunto                       | A dor que resolve                                                     |
 | :---------------------------- | :-------------------------------------------------------------------- |
-| Validação de entrada com Zod  | Qualquer pessoa pode mandar qualquer coisa para a API                 |
 | Documentação viva com Swagger | Ninguém de fora sabe quais rotas existem nem o que elas aceitam       |
 | Segurança HTTP                | API pública sem limite de requisições cai com um script de dez linhas |
 | Docker                        | "Na minha máquina funciona"                                           |
