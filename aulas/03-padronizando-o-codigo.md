@@ -192,7 +192,7 @@ trim_trailing_whitespace = true
 insert_final_newline = true
 
 # Markdown é a exceção: dois espaços no fim da linha significam "quebre a linha aqui".
-# Se o editor apagasse esses espaços, a formatação das nossas aulas quebraria.
+# Se o editor apagasse esses espaços, a formatação dos nossos textos quebraria.
 [*.md]
 trim_trailing_whitespace = false
 ```
@@ -658,20 +658,20 @@ Ainda na pasta `.vscode`, crie o arquivo `extensions.json`:
   // Quando alguém clona este repositório e abre no VS Code, ele sugere instalar
   // estas extensões automaticamente. Ninguém precisa lembrar de avisar.
   //
-  // Esta lista cresce junto com o projeto: cada aula que traz uma ferramenta nova
-  // acrescenta a extensão correspondente aqui.
+  // Esta lista cresce junto com o projeto: cada ferramenta nova que entra
+  // acrescenta aqui a extensão correspondente.
   "recommendations": [
-    // --- Aula 01: TypeScript e a primeira API ---
+    // --- TypeScript: ler erro e testar rota sem sair do editor ---
     "YoavBls.pretty-ts-errors",
     "usernamehw.errorlens",
     "humao.rest-client",
     "streetsidesoftware.code-spell-checker",
     "streetsidesoftware.code-spell-checker-portuguese-brazilian",
 
-    // --- Aula 02: Git e GitHub ---
+    // --- Git: ver quem alterou cada linha, e quando ---
     "eamodio.gitlens",
 
-    // --- Aula 03: Padronização do código ---
+    // --- Padronização do código ---
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "EditorConfig.EditorConfig"

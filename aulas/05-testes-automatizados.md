@@ -493,7 +493,8 @@ Acrescente o cabeçalho no topo do arquivo e confira se o seu está **exatamente
  *
  * Usamos `buildApp()` para montar a aplicação em memória e o `app.inject()` do
  * Fastify para simular uma requisição HTTP por dentro. É exatamente para isso
- * que separamos `app.ts` de `server.ts` lá na Aula 01.
+ * que `app.ts` é separado de `server.ts`: montar a aplicação e subir o servidor
+ * são responsabilidades diferentes, e o teste só precisa da primeira.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -662,7 +663,8 @@ describe('envSchema — valores válidos', () => {
 
 describe('envSchema — valores inválidos', () => {
   it('recusa uma porta que não é número', () => {
-    // Este é o bug que motivou a Aula 04: "8O80" com a letra O.
+    // O caso real que motivou esta validação: "8O80", com a letra O no lugar do
+    // zero. Passa despercebido na leitura e derruba a API na partida.
     expect(envSchema.safeParse({ PORT: '8O80' }).success).toBe(false)
   })
 
@@ -897,28 +899,28 @@ ficar assim:
   // Quando alguém clona este repositório e abre no VS Code, ele sugere instalar
   // estas extensões automaticamente. Ninguém precisa lembrar de avisar.
   //
-  // Esta lista cresce junto com o projeto: cada aula que traz uma ferramenta nova
-  // acrescenta a extensão correspondente aqui.
+  // Esta lista cresce junto com o projeto: cada ferramenta nova que entra
+  // acrescenta aqui a extensão correspondente.
   "recommendations": [
-    // --- Aula 01: TypeScript e a primeira API ---
+    // --- TypeScript: ler erro e testar rota sem sair do editor ---
     "YoavBls.pretty-ts-errors",
     "usernamehw.errorlens",
     "humao.rest-client",
     "streetsidesoftware.code-spell-checker",
     "streetsidesoftware.code-spell-checker-portuguese-brazilian",
 
-    // --- Aula 02: Git e GitHub ---
+    // --- Git: ver quem alterou cada linha, e quando ---
     "eamodio.gitlens",
 
-    // --- Aula 03: Padronização do código ---
+    // --- Padronização do código ---
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "EditorConfig.EditorConfig",
 
-    // --- Aula 04: Variáveis de ambiente ---
+    // --- Variáveis de ambiente ---
     "mikestead.dotenv",
 
-    // --- Aula 05: Testes automatizados ---
+    // --- Testes ---
     "vitest.explorer"
   ]
 }

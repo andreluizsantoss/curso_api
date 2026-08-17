@@ -672,7 +672,7 @@ describe('Handler global de erros', () => {
 
     const resposta = await app.inject({ method: 'GET', url: '/teste/falha-inesperada' })
 
-    // Este é o teste que justifica a aula inteira. Verificamos o corpo bruto, e
+    // Este é o teste mais importante do arquivo. Verificamos o corpo bruto, e
     // não campo por campo: assim o teste pega o vazamento mesmo que alguém, no
     // futuro, acrescente um campo novo à resposta de erro.
     expect(resposta.body).not.toContain('cidadaos')

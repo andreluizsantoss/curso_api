@@ -674,7 +674,7 @@ configuração passa por um único portão validado.
 Adicione ao `.vscode/extensions.json`:
 
 ```json
-    // --- Aula 04: Variáveis de ambiente ---
+    // --- Variáveis de ambiente ---
     "mikestead.dotenv"
 ```
 
