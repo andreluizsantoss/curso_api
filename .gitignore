@@ -1,0 +1,23 @@
+# =============================================
+# Sistema operacional
+# =============================================
+.DS_Store
+Thumbs.db
+
+# =============================================
+# IDE / Editor
+# =============================================
+.idea/
+*.swp
+*.swo
+
+# =============================================
+# O projeto do aluno não mora aqui
+# =============================================
+#
+# Este repositório guarda o material das aulas. O projeto que você constrói
+# seguindo elas fica na sua própria pasta, com o seu próprio repositório.
+# As linhas abaixo evitam que uma cópia acidental venha parar aqui dentro.
+node_modules/
+dist/
+.env

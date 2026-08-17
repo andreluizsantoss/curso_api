@@ -1,0 +1,12 @@
+# =============================================
+# Quebra de linha padronizada
+# =============================================
+#
+# Windows termina cada linha com dois caracteres invisíveis (CR + LF); Linux e
+# Mac terminam com um só (LF). Sem uma regra aqui, o Git entrega o formato de
+# cada sistema operacional, e o mesmo arquivo passa a ter conteúdo diferente
+# dependendo de quem clonou o material.
+#
+# `text=auto` deixa o Git decidir o que é texto e o que é binário (imagem, PDF).
+# `eol=lf` manda entregar todo arquivo de texto com LF, em qualquer sistema.
+* text=auto eol=lf
