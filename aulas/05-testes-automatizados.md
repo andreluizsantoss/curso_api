@@ -939,7 +939,7 @@ resultado inteiro. O seu deve estar **exatamente** assim:
 {
   "name": "curso_api",
   "version": "1.0.0",
-  "description": "API RESTful backend do sistema API do Curso",
+  "description": "API RESTful backend construída durante o curso",
   "main": "dist/server.js",
   "type": "module",
   "engines": {
@@ -1016,7 +1016,7 @@ falta de linha nova, e sim por linha velha que ninguém releu.
 ````markdown
 # API do Curso
 
-API RESTful do sistema API do Curso, construída com **Fastify + TypeScript**.
+API RESTful construída durante o curso, construída com **Fastify + TypeScript**.
 
 ## Começando
 

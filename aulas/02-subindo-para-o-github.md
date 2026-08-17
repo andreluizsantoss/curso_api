@@ -499,7 +499,7 @@ Crie na **raiz do projeto** (na mesma altura do `package.json`) o arquivo `READM
 ````markdown
 # API do Curso
 
-API RESTful do sistema API do Curso, construída com **Fastify + TypeScript**.
+API RESTful construída durante o curso, construída com **Fastify + TypeScript**.
 
 ## Começando
 

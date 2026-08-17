@@ -380,7 +380,7 @@ que já estão no seu arquivo**, porque foi isso que o npm instalou de fato.
 {
   "name": "curso_api",
   "version": "1.0.0",
-  "description": "API RESTful backend do sistema API do Curso",
+  "description": "API RESTful backend construída durante o curso",
   "main": "dist/server.js",
   "type": "module",
   "engines": {
@@ -424,7 +424,7 @@ que já estão no seu arquivo**, porque foi isso que o npm instalou de fato.
   antes de cada compilação, para que um arquivo que você excluiu do `src` não continue vivo
   no `dist`, assombrando o projeto.
 - `npm start` — executa o código pronto usando só o Node, sem nenhuma ferramenta de
-  desenvolvimento. **É exatamente assim que a API vai rodar no servidor do órgão.**
+  desenvolvimento. **É exatamente assim que a API vai rodar em um servidor de produção.**
 
 ### O `.nvmrc`: a mesma versão do Node para todo mundo
 
@@ -466,7 +466,7 @@ Eles respondem a perguntas diferentes:
 | `.nvmrc`  | Qual é a versão **exata** que a equipe usa? | Gerenciadores de versão do Node, e você   |
 
 `>=22` é uma faixa larga de propósito: a API funciona em qualquer Node dessa faixa, e travar o
-servidor do órgão em um número exato só criaria dor de cabeça na hora de atualizar.
+servidor de produção em um número exato só criaria dor de cabeça na hora de atualizar.
 
 Já entre nós, na hora de programar, faixa larga é problema. Se você roda Node 22 e o seu colega
 roda Node 24, vocês dois estão "dentro do permitido" — e mesmo assim um bug pode aparecer só na
@@ -1021,7 +1021,7 @@ e o corpo.
 ### Passo 14: Rodando como roda em produção
 
 Até agora usamos `npm run dev`, que é ótimo para desenvolver mas não é como a API vai rodar
-no servidor do órgão. Vamos ver a versão de verdade.
+em um servidor de produção. Vamos ver a versão de verdade.
 
 Pare o servidor (`Ctrl + C` no terminal) e rode:
 

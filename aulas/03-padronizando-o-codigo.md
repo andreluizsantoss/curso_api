@@ -235,14 +235,15 @@ Crie o arquivo `.prettierrc.json`:
   **dentro** de blocos em arquivos Markdown.
 
 > [!NOTE]
-> Essa última opção existe por um motivo bem específico deste projeto. As nossas aulas são
-> arquivos Markdown cheios de blocos de código — e daqui a pouco, no Capítulo 6, você vai ver
-> um exemplo **propositalmente mal formatado**, para demonstrar o Prettier trabalhando.
+> Essa última opção merece atenção. Um arquivo Markdown — como o `README.md` — pode conter
+> blocos de código dentro dele. Sem essa opção, o Prettier entraria nesses blocos e os
+> reformataria.
 >
-> Sem essa opção, o Prettier arrumaria aquele exemplo dentro do arquivo da aula, e a
-> demonstração perderia completamente o sentido. É um caso real de "a ferramenta está certa,
-> mas o nosso contexto pede uma exceção" — e o jeito correto de tratar isso é registrar a
-> exceção na configuração, com o motivo escrito, e não desligar a ferramenta inteira.
+> Na maior parte do tempo isso seria até bem-vindo. Mas quando o bloco existe justamente para
+> mostrar um exemplo **propositalmente mal escrito**, a formatação automática destrói a
+> demonstração. É um caso real de "a ferramenta está certa, mas o nosso contexto pede uma
+> exceção" — e o jeito correto de tratar isso é registrar a exceção na configuração, com o
+> motivo escrito, e não desligar a ferramenta inteira.
 
 > [!TIP]
 > **Por que `.prettierrc.json` e não só `.prettierrc`?**
@@ -328,8 +329,7 @@ export default defineConfig([
       //
       // É `error`, e não `warn`: aviso que não reprova nada é aviso que o time
       // aprende a ignorar. As exceções legítimas continuam possíveis, mas exigem
-      // um `eslint-disable` com o motivo escrito ao lado — como em
-      // `src/shared/env/index.ts`.
+      // um `eslint-disable` com o motivo escrito ao lado.
       'no-console': 'error',
 
       // Variável declarada e não usada quase sempre indica código morto ou um
@@ -404,7 +404,7 @@ Abra o `package.json` e deixe **exatamente** assim (as novidades estão em `scri
 {
   "name": "curso_api",
   "version": "1.0.0",
-  "description": "API RESTful backend do sistema API do Curso",
+  "description": "API RESTful backend construída durante o curso",
   "main": "dist/server.js",
   "type": "module",
   "engines": {
@@ -720,7 +720,7 @@ tabela de comandos):
 ````markdown
 # API do Curso
 
-API RESTful do sistema API do Curso, construída com **Fastify + TypeScript**.
+API RESTful construída durante o curso, construída com **Fastify + TypeScript**.
 
 ## Começando
 

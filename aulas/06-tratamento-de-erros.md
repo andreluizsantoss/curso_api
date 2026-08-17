@@ -772,7 +772,7 @@ arquivo completo, como ele fica ao final da Aula 06:
 ````markdown
 # API do Curso
 
-API RESTful do sistema API do Curso, construída com **Fastify + TypeScript**.
+API RESTful construída durante o curso, construída com **Fastify + TypeScript**.
 
 ## Começando
 

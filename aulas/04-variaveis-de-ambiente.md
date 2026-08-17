@@ -777,7 +777,7 @@ Essa é a ordem correta — o servidor manda mais que o arquivo local.
 ```
 
 E a API **sobe do mesmo jeito** — é o `--env-file-if-exists` fazendo o trabalho dele, e é
-exatamente assim que ela vai subir no servidor do órgão, onde esse arquivo não existe. Devolva o
+exatamente assim que ela vai subir em um servidor de produção, onde esse arquivo não existe. Devolva o
 nome do arquivo ao normal antes de continuar.
 
 ---
@@ -795,7 +795,7 @@ depois do "Começando":
 ````markdown
 # API do Curso
 
-API RESTful do sistema API do Curso, construída com **Fastify + TypeScript**.
+API RESTful construída durante o curso, construída com **Fastify + TypeScript**.
 
 ## Começando
 
