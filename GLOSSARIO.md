@@ -165,6 +165,16 @@ do `package.json`.
 
 ---
 
+## O
+
+**OpenAPI** — Formato padrão para descrever uma API HTTP: quais rotas existem, o que cada
+uma recebe e o que devolve, campo por campo. O documento é JSON ou YAML, e o que o torna
+valioso é ser **lido por máquina** — a partir dele, ferramentas geram página de documentação,
+código de cliente e testes de contrato. Analogia: a planta baixa da casa. O texto "tem três
+quartos" serve para conversar; a planta serve para construir.
+
+---
+
 ## P
 
 **package.json** — O painel de controle do projeto: nome, versão, dependências e os
@@ -223,6 +233,15 @@ resposta acelera a serialização **e** impede que campo não declarado vaze sem
 regras de verdade acontecem.
 
 **src** — De _source_, código-fonte. A pasta onde escrevemos o TypeScript.
+
+**Swagger** — Nome do conjunto de ferramentas que popularizou o formato OpenAPI. Na prática,
+os dois nomes aparecem juntos: o formato é OpenAPI, e as ferramentas em volta dele costumam
+se chamar Swagger. Neste projeto, o `@fastify/swagger` **gera** a especificação e não publica
+endereço nenhum.
+
+**Swagger UI** — A página que lê uma especificação OpenAPI e a transforma em documentação
+navegável, com botão para disparar cada rota de verdade. É quem publica `/documentation`,
+`/documentation/json` e `/documentation/yaml`.
 
 **Stack trace** — A lista de funções que estavam em execução no momento do erro, na ordem em
 que foram chamadas. É o que diz a linha exata onde o problema nasceu. Vai para o log e

@@ -39,27 +39,35 @@ Transformar "funciona na minha máquina" em código que aguenta o mundo real.
 - [ ] **[07 — Validação de entrada e contrato de resposta](./07-validacao-e-contrato.md)**
       Nunca confiar no que chega de fora, e devolver exatamente o que foi combinado.
 
+## Fase C — Abrindo a API para o mundo
+
+Deixar de ser um projeto que roda na sua máquina e passar a ser um serviço que outras pessoas
+conseguem usar — e que aguenta ser usado.
+
+- [ ] **[08 — Documentação viva com Swagger](./08-documentacao-da-api.md)**
+      Gerar, a partir dos schemas que você já escreveu, uma documentação navegável que não
+      consegue ficar desatualizada.
+
 ---
 
 ## O que vem depois
 
-Esta trilha termina na Aula 07, com uma API que sobe, é padronizada por ferramenta, lê
-configuração validada, tem testes automatizados, não vaza informação interna e não confia no
-que chega de fora.
+Esta trilha termina na Aula 08, com uma API que sobe, é padronizada por ferramenta, lê
+configuração validada, tem testes automatizados, não vaza informação interna, não confia no
+que chega de fora e se documenta sozinha.
 
 Os assuntos abaixo continuam a construção e ficam para uma **trilha avançada**. Não são
 "opcionais" — são os próximos degraus, e cada um só faz sentido depois de você ter sentido a
 dor que ele resolve:
 
-| Assunto                       | A dor que resolve                                                     |
-| :---------------------------- | :-------------------------------------------------------------------- |
-| Documentação viva com Swagger | Ninguém de fora sabe quais rotas existem nem o que elas aceitam       |
-| Segurança HTTP                | API pública sem limite de requisições cai com um script de dez linhas |
-| Docker                        | "Na minha máquina funciona"                                           |
-| Banco de dados com Prisma     | Hoje nada é guardado: o dado morre quando o servidor reinicia         |
-| Integração contínua           | Nada garante que alguém rodou os testes antes de enviar o código      |
-| Branches e Pull Requests      | Todo mundo envia direto para a `main`, sem ninguém revisar            |
-| Autenticação com JWT          | Qualquer um acessa qualquer coisa                                     |
+| Assunto                   | A dor que resolve                                                     |
+| :------------------------ | :-------------------------------------------------------------------- |
+| Segurança HTTP            | API pública sem limite de requisições cai com um script de dez linhas |
+| Docker                    | "Na minha máquina funciona"                                           |
+| Banco de dados com Prisma | Hoje nada é guardado: o dado morre quando o servidor reinicia         |
+| Integração contínua       | Nada garante que alguém rodou os testes antes de enviar o código      |
+| Branches e Pull Requests  | Todo mundo envia direto para a `main`, sem ninguém revisar            |
+| Autenticação com JWT      | Qualquer um acessa qualquer coisa                                     |
 
 ---
 
