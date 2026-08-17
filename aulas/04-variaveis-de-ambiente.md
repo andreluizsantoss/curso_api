@@ -795,7 +795,7 @@ depois do "Começando":
 ````markdown
 # API do Curso
 
-API RESTful construída durante o curso, construída com **Fastify + TypeScript**.
+API RESTful do curso, construída com **Fastify + TypeScript**.
 
 ## Começando
 

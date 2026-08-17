@@ -380,7 +380,7 @@ que já estão no seu arquivo**, porque foi isso que o npm instalou de fato.
 {
   "name": "curso_api",
   "version": "1.0.0",
-  "description": "API RESTful backend construída durante o curso",
+  "description": "API RESTful backend do curso",
   "main": "dist/server.js",
   "type": "module",
   "engines": {

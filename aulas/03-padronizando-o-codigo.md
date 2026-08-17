@@ -404,7 +404,7 @@ Abra o `package.json` e deixe **exatamente** assim (as novidades estão em `scri
 {
   "name": "curso_api",
   "version": "1.0.0",
-  "description": "API RESTful backend construída durante o curso",
+  "description": "API RESTful backend do curso",
   "main": "dist/server.js",
   "type": "module",
   "engines": {
@@ -720,7 +720,7 @@ tabela de comandos):
 ````markdown
 # API do Curso
 
-API RESTful construída durante o curso, construída com **Fastify + TypeScript**.
+API RESTful do curso, construída com **Fastify + TypeScript**.
 
 ## Começando
 
