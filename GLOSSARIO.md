@@ -101,6 +101,10 @@ simples, ele espera apenas o container **existir**, e não o serviço lá dentro
 para atender. Para esperar de verdade, combina-se com `condition: service_healthy`, que só
 libera o próximo serviço quando o `healthcheck` do anterior passar.
 
+**Driver adapter** — Peça que ensina o ORM a conversar com um banco específico. No Prisma 7 ele
+é **obrigatório**: `new PrismaClient()` sem adapter é erro. Para MySQL, o pacote é o
+`@prisma/adapter-mariadb` — os dois bancos falam o mesmo protocolo.
+
 **Dependência** — Um pacote de código pronto que o projeto usa. Ficam listadas no
 `package.json` e são baixadas para `node_modules/`.
 
@@ -164,6 +168,10 @@ tempos se a API responde de verdade. O veredito vem do código de saída do coma
 `unhealthy` é um **rótulo**, não uma ação — o container continua rodando, e quem age é quem
 estiver orquestrando.
 
+**Idempotente** — Operação que, repetida, tem o mesmo efeito de ter sido feita uma vez só. O
+seed do projeto é idempotente: rodá-lo dez vezes deixa os mesmos três registros, porque usa
+`upsert` em vez de `create`.
+
 **Handler** — Função encarregada de tratar uma situação específica. O `errorHandler` deste
 projeto é **global**: registrado uma vez em `buildApp()`, ele atende toda falha de toda rota,
 inclusive das que ainda nem foram escritas.
@@ -213,6 +221,19 @@ demoraram mais de 1 segundo", o que é impossível com texto corrido.
 
 ---
 
+## M
+
+**Migration** — Arquivo versionado no Git que descreve, em SQL, uma alteração na estrutura do
+banco: criar tabela, acrescentar coluna, criar índice. Sem migrations, a estrutura do banco só
+existe dentro daquele banco — não há como reproduzi-la em outra máquina nem revisar a alteração
+antes que ela aconteça.
+
+**Migrate deploy** — Comando que **apenas aplica** as migrations já versionadas, sem criar
+nenhuma e sem usar [[shadow-database]]. É o comando que roda no servidor; o `migrate dev` é o
+da máquina de quem desenvolve.
+
+---
+
 ## N
 
 **Node.js** — O programa que executa JavaScript fora do navegador. É o que faz nossa API
@@ -233,6 +254,10 @@ uns aos outros, reiniciar o que cair. O Docker Compose orquestra em uma máquina
 esse papel costuma caber a ferramentas maiores. É a resposta para a pergunta que o
 `HEALTHCHECK` deixa em aberto: o rótulo `unhealthy` só vira ação quando existe um orquestrador
 escutando.
+
+**ORM** (_Object-Relational Mapper_) — Ferramenta que traduz código em consulta ao banco. Em vez
+de escrever SQL em texto, você declara a estrutura uma vez e trabalha com objetos tipados — e
+errar o nome de uma coluna vira erro de compilação, não erro em produção.
 
 **OpenAPI** — Formato padrão para descrever uma API HTTP: quais rotas existem, o que cada
 uma recebe e o que devolve, campo por campo. O documento é JSON ou YAML, e o que o torna
@@ -308,6 +333,14 @@ pensar. Age sobre **campos de objeto**: texto dentro de uma URL não é alcança
 ---
 
 ## S
+
+**Shadow database** (banco de sombra) — Banco descartável que o `prisma migrate dev` usa para
+conferir se as migrations, aplicadas em ordem, produzem exatamente o schema declarado. É o que
+denuncia migration alterada à mão depois de aplicada. Neste projeto ele **vem pronto do
+Compose**, porque o usuário da aplicação não tem — nem deve ter — permissão de criar bancos.
+
+**Seed** (semeadura) — Arquivo que popula o banco com registros de partida, para que ele não
+nasça vazio a cada recriação. Ver [[idempotente]].
 
 **Schema** — Descrição formal do formato de um dado. No Fastify, declarar o schema da
 resposta acelera a serialização **e** impede que campo não declarado vaze sem querer.

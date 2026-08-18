@@ -59,27 +59,30 @@ conseguem usar — e que aguenta ser usado.
 - [ ] **[12 — Docker Compose: o ambiente completo](./12-docker-compose.md)**
       Descrever o ambiente inteiro — API e banco de dados — em um arquivo versionado, e
       descobrir por que "o container subiu" não significa "o serviço está pronto".
+- [ ] **[13 — Banco de dados: Prisma, MySQL e a camada Repository](./13-banco-de-dados.md)**
+      Fazer a API guardar dado de verdade, com a estrutura do banco versionada em migrations
+      e testes rodando contra um MySQL de verdade, sem destruir o banco de trabalho.
 
 ---
 
 ## O que vem depois
 
-Esta trilha termina na Aula 12, com uma API que sobe, é padronizada por ferramenta, lê
+Esta trilha termina na Aula 13, com uma API que sobe, é padronizada por ferramenta, lê
 configuração validada, tem testes automatizados, não vaza informação interna, não confia no
 que chega de fora, se documenta sozinha, se defende de quem abusa dela, roda igual em
 qualquer máquina, morre sem cortar a requisição de ninguém, registra sem entregar segredo e
-traz o ambiente inteiro de pé com um comando só.
+traz o ambiente inteiro de pé com um comando só e guarda dado em um banco cuja estrutura é
+versionada junto com o código.
 
 Os assuntos abaixo continuam a construção. Não são "opcionais" — são os próximos degraus, e
 cada um só faz sentido depois de você ter sentido a dor que ele resolve:
 
-| Assunto                   | A dor que resolve                                                |
-| :------------------------ | :--------------------------------------------------------------- |
-| Banco de dados com Prisma | Hoje nada é guardado: o dado morre quando o servidor reinicia    |
-| Migrations em produção    | Mudar tabela em banco com dado real não perdoa improviso         |
-| Autenticação com JWT      | Qualquer um acessa qualquer coisa                                |
-| Integração contínua       | Nada garante que alguém rodou os testes antes de enviar o código |
-| Branches e Pull Requests  | Todo mundo envia direto para a `main`, sem ninguém revisar       |
+| Assunto                  | A dor que resolve                                                |
+| :----------------------- | :--------------------------------------------------------------- |
+| Migrations em produção   | Mudar tabela em banco com dado real não perdoa improviso         |
+| Autenticação com JWT     | Qualquer um acessa qualquer coisa                                |
+| Integração contínua      | Nada garante que alguém rodou os testes antes de enviar o código |
+| Branches e Pull Requests | Todo mundo envia direto para a `main`, sem ninguém revisar       |
 
 ---
 
