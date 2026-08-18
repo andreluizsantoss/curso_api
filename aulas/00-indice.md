@@ -53,15 +53,18 @@ conseguem usar — e que aguenta ser usado.
 - [ ] **[10 — Docker: empacotando a API](./10-docker.md)**
       Acabar com o "na minha máquina funciona": código, dependências e a versão exata do Node
       dentro de um pacote só, que sobe com um comando em qualquer computador.
+- [ ] **[11 — Produção de verdade: desligamento, proxy e logs](./11-producao-de-verdade.md)**
+      Fazer a API terminar o que começou antes de morrer, descobrir com quem ela realmente
+      está falando atrás de um proxy, e garantir que nenhum segredo vá parar no log.
 
 ---
 
 ## O que vem depois
 
-Esta trilha termina na Aula 10, com uma API que sobe, é padronizada por ferramenta, lê
+Esta trilha termina na Aula 11, com uma API que sobe, é padronizada por ferramenta, lê
 configuração validada, tem testes automatizados, não vaza informação interna, não confia no
 que chega de fora, se documenta sozinha, se defende de quem abusa dela e roda igual em
-qualquer máquina.
+qualquer máquina, morre sem cortar a requisição de ninguém e registra sem entregar segredo.
 
 Os assuntos abaixo continuam a construção e ficam para uma **trilha avançada**. Não são
 "opcionais" — são os próximos degraus, e cada um só faz sentido depois de você ter sentido a

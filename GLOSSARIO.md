@@ -102,6 +102,11 @@ na marcenaria; o cliente leva só o móvel pronto.
 **dist** — Pasta com o código já compilado, pronto para rodar. De _distribution_. É gerada
 pelo `npm run build` e **não** é versionada no Git.
 
+**Desligamento gracioso** (_graceful shutdown_) — Encerrar um programa terminando o que já
+começou, em vez de parar no meio. Na prática: parar de aceitar requisição nova, esperar as
+que estão em andamento responderem e só então sair. Sem isso, o deploy corta a requisição de
+quem estava usando o sistema naquele segundo.
+
 ---
 
 ## E
@@ -250,6 +255,15 @@ produção afeta pessoas.
 não vê: o processo morre sem passar pelo seu log. É por isso que o `server.ts` termina com
 `start().catch(...)`.
 
+**PID 1** — O primeiro processo de um sistema Linux, e o único processo de um container
+comum. O Linux o trata de forma diferente: para ele **não existe ação padrão para sinal**, e
+um `SIGTERM` que ninguém trata é simplesmente ignorado. É por isso que uma aplicação em
+container precisa tratar sinais de propósito.
+
+**Proxy reverso** — Programa que fica na frente da API, recebe todas as conexões e as repassa
+para dentro. Do ponto de vista da API, todas as requisições passam a vir dele — e é por isso
+que existe o `X-Forwarded-For`.
+
 ---
 
 ## R
@@ -271,6 +285,10 @@ corpo em JSON.
 método HTTP diz o que fazer com ela.
 
 **Rota** — A ligação entre um endereço (`/health`) e o código que responde por ele.
+
+**redact** — Recurso do logger que substitui o valor de campos declarados por
+`[Redacted]` antes de a linha ser escrita. Protege credencial que alguém registre sem
+pensar. Age sobre **campos de objeto**: texto dentro de uma URL não é alcançado por ele.
 
 ---
 
@@ -303,6 +321,14 @@ que foram chamadas. É o que diz a linha exata onde o problema nasceu. Vai para 
 encontrado, `500` erro do servidor. A faixa importa: `4xx` significa "o problema está do seu
 lado" e `5xx`, "o problema está do meu lado".
 
+**SIGTERM** — Sinal que pede a um processo que termine. Pode ser tratado: é o processo que
+decide o que fazer ao recebê-lo. É o que o `docker stop` envia primeiro.
+
+**SIGINT** — O mesmo pedido, vindo do teclado: é o `Ctrl+C`. Também pode ser tratado.
+
+**SIGKILL** — Encerramento forçado. **Não** pode ser tratado nem ignorado: nem chega ao
+processo. Um container que sai com código **137** (128 + 9) morreu assim.
+
 ---
 
 ## T
@@ -327,3 +353,11 @@ segurança. Reclama mais, e é exatamente esse o objetivo.
 
 **uptime** — Há quanto tempo o processo está no ar, em segundos. Usado por ferramentas de
 monitoramento para detectar aplicação que reinicia sozinha em looping.
+
+---
+
+## X
+
+**X-Forwarded-For** — Cabeçalho HTTP em que um proxy escreve o endereço de quem realmente
+chamou, já que a conexão que chega à API é a dele. Qualquer cliente pode enviá-lo, então
+acreditar nele é uma decisão consciente — a do `trustProxy`.

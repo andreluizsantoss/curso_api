@@ -37,7 +37,7 @@ Uma API chamada `curso_api`, com:
 
 ---
 
-## As dez aulas
+## As onze aulas
 
 | #   | Aula                                                         | O que resolve                                               |
 | :-- | :----------------------------------------------------------- | :---------------------------------------------------------- |
@@ -51,6 +51,7 @@ Uma API chamada `curso_api`, com:
 | 08  | [Documentação da API](./aulas/08-documentacao-da-api.md)     | Ninguém de fora sabe quais rotas existem nem o que aceitam  |
 | 09  | [Segurança HTTP](./aulas/09-seguranca-http.md)               | Um script de dez linhas derruba a API                       |
 | 10  | [Docker: empacotando a API](./aulas/10-docker.md)            | "Na minha máquina funciona" — rodar em outro computador dói |
+| 11  | [Produção de verdade](./aulas/11-producao-de-verdade.md)     | A API morre no meio da requisição, e o log guarda segredo   |
 
 Cada aula termina com **"Como saber que deu certo"**, **"Erros Comuns"** e exercícios com
 [gabarito comentado](./aulas/exercicios/).
