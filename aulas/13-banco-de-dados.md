@@ -875,6 +875,21 @@ datasource db {
   provider = "mysql"
 }
 
+/// ATENÇÃO: este modelo é uma DEMONSTRAÇÃO, e não o cadastro definitivo.
+///
+/// Ele tem os campos mínimos para sustentar a aula de banco de dados. Um cadastro
+/// de cidadão de verdade precisa de coisas que ninguém levantou ainda: nome
+/// social, data de nascimento, endereço, trilha de auditoria (quem cadastrou e
+/// quem alterou), exclusão lógica em vez de apagar a linha, e o tratamento de CPF
+/// exigido pela LGPD. Os tipos também são os padrões do Prisma, e não os que a
+/// tabela pediria — CPF tem tamanho fixo, e o `id` é um uuid.
+///
+/// O modelo real entra na Aula 15, junto da primeira funcionalidade de negócio,
+/// quando existir requisito em vez de suposição. Item **P-17** do checklist.
+///
+/// A janela para trocar isso de graça é enquanto **nenhum servidor tiver rodado
+/// `migrate deploy`**: aí basta apagar e recriar o histórico de migrations. Depois
+/// do primeiro deploy, o mesmo ajuste vira `DROP TABLE` com dado de gente dentro.
 model Cidadao {
   id           String   @id @default(uuid())
   nome         String
