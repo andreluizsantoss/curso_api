@@ -35,6 +35,17 @@ código que o servidor executa (JavaScript, em `dist/`). Comando: `npm run build
 
 ## C
 
+**Camada** (_layer_) — Cada instrução do `Dockerfile` produz uma camada, e o Docker guarda
+cada uma em cache. Quando uma camada muda, ela e **todas as que vêm depois** são refeitas — é
+por isso que a ordem das linhas do arquivo é decisão de desempenho, e não de estética.
+
+**Contexto de build** — A pasta que o Docker recebe para trabalhar quando você roda
+`docker build ... .` (o ponto final). O `.dockerignore` é a lista do que fica de fora dele.
+
+**Container** — Uma execução de uma imagem. Se a imagem é a receita, o container é o bolo:
+da mesma imagem sobem muitos containers ao mesmo tempo, e apagar um não afeta os outros nem
+a imagem.
+
 **Clickjacking** — Ataque em que um site coloca a página de outro dentro de uma moldura
 invisível e engana a pessoa para clicar onde ela não vê. O cabeçalho `x-frame-options`, que o
 Helmet liga, é o que impede a moldura de existir.
@@ -71,6 +82,15 @@ quem clonou — e as ferramentas acusariam mudança onde ninguém mudou nada.
 ---
 
 ## D
+
+**`.dockerignore`** — Lista do que não entra no contexto de build. Impede que o
+`node_modules`, o `.git` e — principalmente — o `.env` com segredos entrem na imagem. Um
+segredo que entra numa imagem fica nela para sempre, porque a camada anterior continua
+legível mesmo se um comando posterior apagar o arquivo.
+
+**`Dockerfile`** — Arquivo de texto com as instruções para construir uma imagem. As mais
+usadas: `FROM` (de onde partir), `COPY` (trazer arquivos), `RUN` (executar durante a
+construção) e `CMD` (o que rodar quando o container subir).
 
 **Dependência** — Um pacote de código pronto que o projeto usa. Ficam listadas no
 `package.json` e são baixadas para `node_modules/`.
@@ -125,6 +145,11 @@ linha). O nosso é o Prettier.
 
 ## H
 
+**`HEALTHCHECK`** — Instrução do `Dockerfile` que manda o Docker perguntar de tempos em
+tempos se a API responde de verdade. O veredito vem do código de saída do comando. Importante:
+`unhealthy` é um **rótulo**, não uma ação — o container continua rodando, e quem age é quem
+estiver orquestrando.
+
 **Handler** — Função encarregada de tratar uma situação específica. O `errorHandler` deste
 projeto é **global**: registrado uma vez em `buildApp()`, ele atende toda falha de toda rota,
 inclusive das que ainda nem foram escritas.
@@ -142,6 +167,9 @@ parar de responder, o sistema de infraestrutura sabe que precisa reiniciar a apl
 ---
 
 ## I
+
+**Imagem** — O pacote pronto e imutável com o código, as dependências e a versão exata do
+Node. É a receita: dela saem os containers.
 
 **Injeção de dependência** — Entregar a uma classe as coisas de que ela precisa, em vez de
 ela mesma criá-las. No nosso código, o `HealthController` **recebe** o `HealthService` pelo

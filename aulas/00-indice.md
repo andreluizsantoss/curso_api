@@ -50,14 +50,18 @@ conseguem usar — e que aguenta ser usado.
 - [ ] **[09 — Segurança HTTP](./09-seguranca-http.md)**
       Derrubar a própria API com cinco linhas, e depois impedir isso — com limite de
       requisições, controle de origem e os cabeçalhos que o navegador respeita.
+- [ ] **[10 — Docker: empacotando a API](./10-docker.md)**
+      Acabar com o "na minha máquina funciona": código, dependências e a versão exata do Node
+      dentro de um pacote só, que sobe com um comando em qualquer computador.
 
 ---
 
 ## O que vem depois
 
-Esta trilha termina na Aula 09, com uma API que sobe, é padronizada por ferramenta, lê
+Esta trilha termina na Aula 10, com uma API que sobe, é padronizada por ferramenta, lê
 configuração validada, tem testes automatizados, não vaza informação interna, não confia no
-que chega de fora, se documenta sozinha e se defende de quem abusa dela.
+que chega de fora, se documenta sozinha, se defende de quem abusa dela e roda igual em
+qualquer máquina.
 
 Os assuntos abaixo continuam a construção e ficam para uma **trilha avançada**. Não são
 "opcionais" — são os próximos degraus, e cada um só faz sentido depois de você ter sentido a
