@@ -65,17 +65,22 @@ conseguem usar — e que aguenta ser usado.
 - [ ] **[14 — Migrations em produção](./14-migrations-em-producao.md)**
       Alterar a estrutura de um banco que não pode parar: o padrão expande/contrai, o que
       fazer quando a migration falha no meio, e o backup que você provou que restaura.
+- [ ] **[15 — Negócio e versionamento](./15-negocio-e-versionamento.md)**
+      A primeira rota que existe para alguém de fora: um cadastro de pessoa desenhado campo a
+      campo, exclusão que não apaga ninguém, e o endereço `/api/v1` que sobrevive à mudança.
 
 ---
 
 ## O que vem depois
 
-Esta trilha termina na Aula 14, com uma API que sobe, é padronizada por ferramenta, lê
+Esta trilha termina na Aula 15, com uma API que sobe, é padronizada por ferramenta, lê
 configuração validada, tem testes automatizados, não vaza informação interna, não confia no
 que chega de fora, se documenta sozinha, se defende de quem abusa dela, roda igual em
 qualquer máquina, morre sem cortar a requisição de ninguém, registra sem entregar segredo e
 traz o ambiente inteiro de pé com um comando só e guarda dado em um banco cuja estrutura é
-versionada junto com o código — e que sabe alterar essa estrutura sem derrubar ninguém.
+versionada junto com o código, sabe alterar essa estrutura sem derrubar ninguém — e que, por
+fim, faz alguma coisa: mantém um cadastro de cidadão sob um endereço versionado, decidindo o
+que guarda, o que devolve e o que nunca devolve.
 
 Os assuntos abaixo continuam a construção. Não são "opcionais" — são os próximos degraus, e
 cada um só faz sentido depois de você ter sentido a dor que ele resolve:

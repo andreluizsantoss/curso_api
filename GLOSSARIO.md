@@ -83,6 +83,10 @@ quem clonou — e as ferramentas acusariam mudança onde ninguém mudou nada.
 
 ## D
 
+**Dígito verificador** — Algarismo calculado a partir dos outros, que existe só para
+detectar erro de digitação. O CPF tem dois. Refazer a conta prova que o número é **bem
+formado**; não prova que ele existe, nem que pertence a quem apresentou.
+
 **`.dockerignore`** — Lista do que não entra no contexto de build. Impede que o
 `node_modules`, o `.git` e — principalmente — o `.env` com segredos entrem na imagem. Um
 segredo que entra numa imagem fica nela para sempre, porque a camada anterior continua
@@ -132,6 +136,11 @@ quem estava usando o sistema naquele segundo.
 básicas do projeto (tamanho da indentação, tipo de quebra de linha).
 
 **Endpoint** — Um endereço específico da API que responde a alguma coisa. Ex.: `/health`.
+
+**Exclusão lógica** — Marcar um registro como excluído (preenchendo uma data) em vez de apagar
+a linha. O registro some das consultas e continua no banco. Existe porque cadastro costuma ter
+histórico ligado a ele — apagar transformaria esse histórico em referência quebrada, e `DELETE`
+não tem desfazer.
 
 **Enumeração** — Técnica de ataque em que alguém provoca erros de propósito, um atrás do
 outro, e vai montando a planta do sistema pelas mensagens que voltam. É por isso que uma
@@ -278,6 +287,14 @@ quartos" serve para conversar; a planta serve para construir.
 
 ## P
 
+**PATCH × PUT** — Os dois alteram um recurso. O `PUT` espera o recurso **inteiro**, e o que
+não vier é apagado; o `PATCH` altera **só o que foi enviado**. Em cadastro com muitos campos, o
+`PUT` é um convite a apagar dado por omissão.
+
+**Prefixo de versão** — O `/api/v1` no começo do endereço. Ele permite lançar uma `v2`
+incompatível sem obrigar todos os sistemas que consomem a API a mudarem no mesmo dia. Rotas de
+monitoramento ficam **fora** dele: quem as consulta é o alarme, não um integrador.
+
 **package.json** — O painel de controle do projeto: nome, versão, dependências e os
 atalhos de comando (`scripts`).
 
@@ -316,6 +333,11 @@ que existe o `X-Forwarded-For`.
 ---
 
 ## R
+
+**Retrocompatível** — Mudança que **não obriga ninguém a mexer no código de quem consome**.
+Acrescentar campo opcional é; remover campo, renomear ou exigir o que era opcional não é. A
+mesma pergunta vale para banco de dados, onde ela decide se a migration pode rodar com a versão
+antiga ainda no ar.
 
 **Rate limit** (limite de requisições) — Teto de quantas requisições um mesmo cliente pode
 fazer numa janela de tempo. Diferente de Helmet e CORS, é a **própria API** que recusa, então
