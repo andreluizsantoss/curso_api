@@ -951,10 +951,131 @@ precisam concordar.
 
 ### `README.md`
 
-Acrescente ao final da seção de comandos:
+O README ganha a seção `## Rodando por container`, e os dois comandos novos entram na tabela.
+
+Como a Aula 09 também acrescentou uma seção a este arquivo, **este é o arquivo completo** —
+confira o seu contra ele de cima a baixo, porque é o último retrato que a trilha oferece:
 
 ````markdown
-### Rodando por container
+# API do Curso
+
+API RESTful do curso, construída com **Fastify + TypeScript**.
+
+## Começando
+
+```bash
+npm install     # baixa as dependências
+npm run dev     # sobe a API em http://localhost:3333
+```
+
+**Pré-requisito:** Node.js na versão registrada no `.nvmrc`.
+
+## Configuração
+
+Antes de subir a API pela primeira vez, crie o seu `.env` a partir do modelo versionado:
+
+```bash
+# Windows (PowerShell)
+Copy-Item .env.example .env
+
+# Linux / Mac
+cp .env.example .env
+```
+
+| Variável       | O que controla                                  | Padrão        |
+| :------------- | :---------------------------------------------- | :------------ |
+| `NODE_ENV`     | Ambiente: `development`, `test` ou `production` | `development` |
+| `PORT`         | Porta em que a API escuta                       | `3333`        |
+| `HOST`         | Endereço de rede que a API aceita               | `0.0.0.0`     |
+| `CORS_ORIGINS` | Sites que podem chamar a API pelo navegador     | _(nenhum)_    |
+
+O `.env` **não** é versionado: ele guarda os valores reais de cada máquina, incluindo os
+segredos. O `.env.example` é versionado e serve de modelo — ele nunca contém senha de verdade.
+
+## Comandos
+
+| Comando                | O que faz                                          |
+| :--------------------- | :------------------------------------------------- |
+| `npm run dev`          | Sobe a API recarregando a cada alteração salva     |
+| `npm run build`        | Compila o TypeScript para a pasta `dist`           |
+| `npm start`            | Executa a versão compilada, como roda em produção  |
+| `npm test`             | Roda todos os testes uma vez                       |
+| `npm run test:watch`   | Deixa os testes rodando a cada arquivo salvo       |
+| `npm run lint`         | Procura problemas de lógica e qualidade no código  |
+| `npm run lint:fix`     | Corrige sozinho o que for corrigível               |
+| `npm run format`       | Formata todos os arquivos com o Prettier           |
+| `npm run format:check` | Confere a formatação sem alterar nada              |
+| `npm run check`        | Roda lint, formatação, testes e build em sequência |
+| `npm run docker:build` | Constrói a imagem da API                           |
+| `npm run docker:run`   | Sobe a API em container, na porta 3333             |
+
+## Rotas
+
+| Método | Rota            | O que devolve                                     |
+| :----- | :-------------- | :------------------------------------------------ |
+| `GET`  | `/health`       | **Vida:** apenas `{ "status": "ok" }`             |
+| `GET`  | `/health/ready` | **Prontidão:** status, uptime, momento e ambiente |
+
+Toda rota declara o contrato da resposta com Zod. Campo que não está no contrato **não sai**,
+mesmo que o código o devolva por engano.
+
+## Documentação da API
+
+Com a API rodando fora de produção, a documentação navegável fica em:
+
+```
+http://localhost:3333/documentation
+```
+
+Ela é **gerada a partir dos schemas do código**, e não escrita à mão: o que está lá é
+exatamente o que a API aceita e devolve. Dá para disparar cada rota pela própria página.
+
+| Endereço              | O que é                          |
+| :-------------------- | :------------------------------- |
+| `/documentation`      | A página navegável               |
+| `/documentation/json` | A especificação OpenAPI, em JSON |
+| `/documentation/yaml` | A mesma especificação, em YAML   |
+
+**Em produção os três respondem 404**, por decisão registrada: enquanto a API só tiver rotas
+de saúde, publicar o mapa completo não ajuda ninguém de fora e ajuda quem estiver mapeando o
+serviço. Quando existirem rotas de negócio e autenticação, a documentação volta a subir —
+protegida por login.
+
+## Formato de erro
+
+Toda falha responde com o mesmo corpo, qualquer que seja a rota ou o código HTTP:
+
+```json
+{
+  "statusCode": 404,
+  "error": "Not Found",
+  "message": "Endereço não encontrado: GET /rota-que-nao-existe"
+}
+```
+
+| Campo        | O que é                                            |
+| :----------- | :------------------------------------------------- |
+| `statusCode` | O código HTTP repetido no corpo                    |
+| `error`      | O nome oficial do código HTTP, em inglês           |
+| `message`    | A explicação em português, escrita para uma pessoa |
+
+Erro inesperado (código 500) sempre responde com uma mensagem genérica. O detalhe técnico vai
+para o log estruturado do servidor, nunca para o cliente.
+
+## Segurança
+
+| Proteção       | O que faz                                                   |
+| :------------- | :---------------------------------------------------------- |
+| **Helmet**     | Liga os cabeçalhos de segurança que o navegador respeita    |
+| **CORS**       | Só as origens em `CORS_ORIGINS` podem chamar pelo navegador |
+| **Rate limit** | 100 requisições por minuto, por IP                          |
+
+A rota `/health` tem limite próprio, de 240 por minuto, para não bloquear o monitoramento.
+
+**Limite conhecido:** a contagem usa o IP da conexão. Atrás de um proxy, todos os clientes são
+contados como um só. Será corrigido quando a API passar a rodar atrás de proxy.
+
+## Rodando por container
 
 Requer o Docker Desktop instalado e em execução.
 
@@ -964,8 +1085,10 @@ npm run docker:run     # sobe a API na porta 3333
 ```
 
 A imagem é multi-estágio: o código-fonte e as ferramentas de desenvolvimento ficam fora da
-imagem final. O processo roda como usuário sem privilégios, e o Docker verifica a saúde da
-API pela rota `/health` a cada 30 segundos.
+imagem final. O processo roda como usuário sem privilégios (`node`), e o Docker verifica a
+saúde da API pela rota `/health` a cada 30 segundos — `docker ps` mostra `(healthy)`.
+
+Dentro do container a configuração chega por variável de ambiente, e não por arquivo `.env`.
 ````
 
 ---
