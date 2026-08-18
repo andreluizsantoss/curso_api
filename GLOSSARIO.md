@@ -115,6 +115,10 @@ na marcenaria; o cliente leva só o móvel pronto.
 **dist** — Pasta com o código já compilado, pronto para rodar. De _distribution_. É gerada
 pelo `npm run build` e **não** é versionada no Git.
 
+**Dump** — Arquivo com o conteúdo inteiro de um banco, gerado pelo `mysqldump`: estrutura mais
+todas as linhas. É o formato do backup — e, por trazer todo o dado pessoal, nunca vai para o
+Git. Dump que nunca foi restaurado é esperança, não backup.
+
 **Desligamento gracioso** (_graceful shutdown_) — Encerrar um programa terminando o que já
 começou, em vez de parar no meio. Na prática: parar de aceitar requisição nova, esperar as
 que estão em andamento responderem e só então sair. Sem isso, o deploy corta a requisição de
@@ -138,6 +142,11 @@ mensagem de erro descuidada é um problema de segurança, e não só de acabamen
 para o cliente ler. O inesperado ninguém previu (banco fora do ar, bug, biblioteca que
 quebrou): a mensagem veio de fora e pode conter qualquer coisa. Nesta API, só a do primeiro
 tipo chega ao cliente — a régua é a **procedência** da mensagem, não o conteúdo dela.
+
+**Expande/contrai** — Padrão para alterar tabela sem derrubar o sistema, em quatro passos:
+acrescenta a coluna nova (opcional), passa a gravar nas duas, copia o dado que faltava e só
+então remove a antiga. Ele existe porque, durante um deploy, o **código velho roda sobre o
+schema novo** por alguns minutos.
 
 **ESLint** — Ferramenta que analisa o código procurando problemas de **lógica e qualidade**
 (variável nunca usada, comparação que nunca é verdadeira). Cuida do conteúdo, não da aparência.
@@ -312,6 +321,10 @@ que existe o `X-Forwarded-For`.
 fazer numa janela de tempo. Diferente de Helmet e CORS, é a **própria API** que recusa, então
 vale contra qualquer um. Neste projeto: 100 por minuto por IP, e 240 no `/health`, para não
 bloquear o monitoramento. Quem estoura recebe **429**.
+
+**Retrocompatível** — Alteração que o código **já em produção** aguenta sem quebrar.
+Acrescentar coluna opcional é retrocompatível; remover coluna que o código velho lê não é. É a
+pergunta que decide se uma migration pode subir com o sistema no ar.
 
 **Repository** — Camada que conversa com o banco de dados. Só entra e sai dado; **nenhuma**
 regra de negócio mora aqui.
