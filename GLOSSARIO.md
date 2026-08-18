@@ -92,6 +92,15 @@ legível mesmo se um comando posterior apagar o arquivo.
 usadas: `FROM` (de onde partir), `COPY` (trazer arquivos), `RUN` (executar durante a
 construção) e `CMD` (o que rodar quando o container subir).
 
+**Docker Compose** — Ferramenta que descreve um ambiente inteiro — vários containers, a rede
+entre eles e o disco que eles usam — em um único arquivo versionado, o `docker-compose.yml`.
+Se o `Dockerfile` é a receita de um prato, o Compose é o menu do jantar inteiro.
+
+**`depends_on`** — Campo do Compose que define a ordem de partida dos serviços. Na forma
+simples, ele espera apenas o container **existir**, e não o serviço lá dentro estar pronto
+para atender. Para esperar de verdade, combina-se com `condition: service_healthy`, que só
+libera o próximo serviço quando o `healthcheck` do anterior passar.
+
 **Dependência** — Um pacote de código pronto que o projeto usa. Ficam listadas no
 `package.json` e são baixadas para `node_modules/`.
 
@@ -219,6 +228,12 @@ do `package.json`.
 
 ## O
 
+**Orquestração** — Cuidar de vários containers como um conjunto: subir na ordem certa, ligar
+uns aos outros, reiniciar o que cair. O Docker Compose orquestra em uma máquina; em produção,
+esse papel costuma caber a ferramentas maiores. É a resposta para a pergunta que o
+`HEALTHCHECK` deixa em aberto: o rótulo `unhealthy` só vira ação quando existe um orquestrador
+escutando.
+
 **OpenAPI** — Formato padrão para descrever uma API HTTP: quais rotas existem, o que cada
 uma recebe e o que devolve, campo por campo. O documento é JSON ou YAML, e o que o torna
 valioso é ser **lido por máquina** — a partir dele, ferramentas geram página de documentação,
@@ -302,6 +317,11 @@ resposta acelera a serialização **e** impede que campo não declarado vaze sem
 **Service** — Camada que concentra a lógica de negócio. Analogia: o cérebro. É onde as
 regras de verdade acontecem.
 
+**Serviço** (no Docker Compose) — Uma peça do ambiente descrita no `docker-compose.yml`: a
+API, o banco de dados. Cada serviço vira um container ao subir. O nome do serviço também é o
+**endereço de rede** dele: dentro da rede do projeto, `mysql` resolve para o IP do container do
+banco sem ninguém configurar nada.
+
 **src** — De _source_, código-fonte. A pasta onde escrevemos o TypeScript.
 
 **Swagger** — Nome do conjunto de ferramentas que popularizou o formato OpenAPI. Na prática,
@@ -353,6 +373,15 @@ segurança. Reclama mais, e é exatamente esse o objetivo.
 
 **uptime** — Há quanto tempo o processo está no ar, em segundos. Usado por ferramentas de
 monitoramento para detectar aplicação que reinicia sozinha em looping.
+
+---
+
+## V
+
+**Volume nomeado** — Área de disco gerenciada pelo Docker que **sobrevive** ao container ser
+destruído. É onde o banco de dados guarda os dados: sem ela, tudo morre junto com o container,
+que é descartável por natureza. O `docker compose down` preserva o volume; o `down -v` o apaga,
+sem confirmação e sem volta.
 
 ---
 

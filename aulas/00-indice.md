@@ -56,27 +56,30 @@ conseguem usar — e que aguenta ser usado.
 - [ ] **[11 — Produção de verdade: desligamento, proxy e logs](./11-producao-de-verdade.md)**
       Fazer a API terminar o que começou antes de morrer, descobrir com quem ela realmente
       está falando atrás de um proxy, e garantir que nenhum segredo vá parar no log.
+- [ ] **[12 — Docker Compose: o ambiente completo](./12-docker-compose.md)**
+      Descrever o ambiente inteiro — API e banco de dados — em um arquivo versionado, e
+      descobrir por que "o container subiu" não significa "o serviço está pronto".
 
 ---
 
 ## O que vem depois
 
-Esta trilha termina na Aula 11, com uma API que sobe, é padronizada por ferramenta, lê
+Esta trilha termina na Aula 12, com uma API que sobe, é padronizada por ferramenta, lê
 configuração validada, tem testes automatizados, não vaza informação interna, não confia no
-que chega de fora, se documenta sozinha, se defende de quem abusa dela e roda igual em
-qualquer máquina, morre sem cortar a requisição de ninguém e registra sem entregar segredo.
+que chega de fora, se documenta sozinha, se defende de quem abusa dela, roda igual em
+qualquer máquina, morre sem cortar a requisição de ninguém, registra sem entregar segredo e
+traz o ambiente inteiro de pé com um comando só.
 
-Os assuntos abaixo continuam a construção e ficam para uma **trilha avançada**. Não são
-"opcionais" — são os próximos degraus, e cada um só faz sentido depois de você ter sentido a
-dor que ele resolve:
+Os assuntos abaixo continuam a construção. Não são "opcionais" — são os próximos degraus, e
+cada um só faz sentido depois de você ter sentido a dor que ele resolve:
 
 | Assunto                   | A dor que resolve                                                |
 | :------------------------ | :--------------------------------------------------------------- |
-| Docker                    | "Na minha máquina funciona"                                      |
 | Banco de dados com Prisma | Hoje nada é guardado: o dado morre quando o servidor reinicia    |
+| Migrations em produção    | Mudar tabela em banco com dado real não perdoa improviso         |
+| Autenticação com JWT      | Qualquer um acessa qualquer coisa                                |
 | Integração contínua       | Nada garante que alguém rodou os testes antes de enviar o código |
 | Branches e Pull Requests  | Todo mundo envia direto para a `main`, sem ninguém revisar       |
-| Autenticação com JWT      | Qualquer um acessa qualquer coisa                                |
 
 ---
 
