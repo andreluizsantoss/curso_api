@@ -628,8 +628,8 @@ import type { HealthService } from './health.service.ts'
 export class HealthController {
   /**
    * Recebe o service pronto, por parâmetro do construtor, em vez de criá-lo aqui
-   * dentro. Isso se chama injeção de dependência e é o que nos permitirá, nos
-   * testes, entregar um service falso para verificar o controller isoladamente.
+   * dentro. Isso se chama injeção de dependência: quem cria o controller é quem
+   * decide qual service ele recebe, e trocar essa peça não exige abrir esta classe.
    */
   constructor(private readonly healthService: HealthService) {}
 
@@ -677,8 +677,9 @@ Esta é a parte mais elegante. O `constructor` é a rotina de admissão do nosso
 Estamos dizendo: "para trabalhar, ele **precisa** receber um HealthService pronto".
 
 Repare que o controller não cria o service. Ele **recebe**. Isso se chama **injeção de
-dependência**, e a vantagem aparece nos testes: podemos entregar um service falso, que
-devolve dados controlados, e verificar o controller isoladamente. Vamos fazer isso na Aula 05.
+dependência**, e a vantagem é a liberdade de quem monta: o controller declara o que
+precisa, e quem o cria decide o que entregar. No dia em que o service mudar de forma, o
+controller não muda junto.
 
 ### Passo 8: Criando as Rotas (as placas de sinalização 🛣️)
 
@@ -740,9 +741,10 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
 Agora montamos a fundação do servidor. Repare que separamos **construir o prédio** de **ligar
 na tomada**. Por quê?
 
-Porque na Aula 05 vamos criar robôs de teste, e queremos que o robô consiga montar o prédio e
-inspecioná-lo por dentro **sem abrir as portas para a internet**. Guarde esta frase — ela vai
-fazer todo o sentido lá na frente.
+Porque são duas decisões que mudam por motivos diferentes. Quais salas o prédio tem é uma
+pergunta sobre a aplicação; em qual porta ele atende é uma pergunta sobre a máquina onde
+ele roda. Misturar as duas obriga a abrir a rede toda vez que se quer apenas montar a
+aplicação — e obriga a mexer na aplicação toda vez que o endereço muda.
 
 Abra `src/app.ts`:
 
@@ -756,8 +758,9 @@ Abra `src/app.ts`:
  *   3. Registrar as rotas de cada módulo.
  *
  * Separamos a montagem do app (aqui) da inicialização do servidor (`server.ts`)
- * para facilitar os testes automatizados: nos testes importamos apenas o app,
- * sem precisar ocupar uma porta de rede.
+ * porque são duas responsabilidades diferentes: uma decide quais rotas e
+ * plugins a aplicação tem, a outra decide em qual endereço ela atende. Quem
+ * monta a aplicação não precisa saber nada sobre rede.
  */
 
 import Fastify from 'fastify'
@@ -767,8 +770,7 @@ import { healthRoutes } from './modules/health/health.routes.ts'
 /**
  * Fábrica da aplicação Fastify.
  *
- * @returns Instância do Fastify já configurada, pronta para receber requisições
- *          ou para ser usada em testes.
+ * @returns Instância do Fastify já configurada, pronta para receber requisições.
  */
 export function buildApp(): FastifyInstance {
   const app = Fastify({
@@ -805,8 +807,8 @@ Agora damos vida à API. Abra `src/server.ts`:
  * Este arquivo é responsável APENAS por iniciar o servidor HTTP na porta
  * configurada. Toda a montagem do Fastify (plugins e rotas) está em `app.ts`.
  *
- * Essa separação permite que, nos testes automatizados, importemos apenas o
- * `app.ts` sem precisar abrir uma porta de rede real.
+ * Essa separação mantém a montagem da aplicação independente da rede: o
+ * `app.ts` pode ser montado inteiro sem que nenhuma porta seja aberta.
  */
 
 import { buildApp } from './app.ts'

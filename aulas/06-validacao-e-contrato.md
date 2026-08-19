@@ -1,8 +1,8 @@
-# 🛡️ Aula 07: Validação de Entrada e Contrato de Resposta
+# 🛡️ Aula 06: Validação de Entrada e Contrato de Resposta
 
-Bem-vindos à **Aula 07**! 🎉
+Bem-vindos à **Aula 06**! 🎉
 
-Na Aula 06 vocês fizeram a API parar de contar o que não deve **quando algo dá errado**. Hoje
+Na Aula 05 vocês fizeram a API parar de contar o que não deve **quando algo dá errado**. Hoje
 vamos cuidar das duas portas da API quando tudo dá certo: **o que entra** e **o que sai**.
 
 São problemas opostos, e a mesma ferramenta resolve os dois — o Zod, que vocês já conhecem da
@@ -21,8 +21,9 @@ Aula 04, onde ele validou as variáveis de ambiente.
 
 ## 📋 Pré-requisitos
 
-- Aulas 01 a 06 concluídas.
+- Aulas 01 a 05 concluídas.
 - `npm run check` passando no seu projeto.
+- A extensão **REST Client**, que você já usou na Aula 05.
 
 ---
 
@@ -58,14 +59,11 @@ export interface HealthStatus {
 }
 ```
 
-Suba a API e acesse a rota:
+Suba a API e chame a rota — use a requisição `GET /health` que já está no seu
+`requisicoes/health.http`:
 
 ```bash
 npm run dev
-```
-
-```
-GET http://localhost:3333/health
 ```
 
 A resposta agora inclui o caminho completo da pasta onde a API está rodando no servidor:
@@ -74,7 +72,7 @@ A resposta agora inclui o caminho completo da pasta onde a API está rodando no 
 {
   "status": "ok",
   "uptime": 12.34,
-  "timestamp": "2026-08-17T17:00:00.000Z",
+  "timestamp": "2026-08-19T17:00:00.000Z",
   "environment": "development",
   "caminhoDoServidor": "C:/projeto/curso_api"
 }
@@ -156,15 +154,13 @@ Seu `package.json` fica assim — a única linha nova é a da biblioteca em `dep
   "scripts": {
     "dev": "tsx watch --env-file=.env src/server.ts",
     "prebuild": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-    "build": "tsc --project tsconfig.build.json",
+    "build": "tsc",
     "start": "node --env-file-if-exists=.env dist/server.js",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run lint && npm run format:check && npm run test && npm run build"
+    "check": "npm run lint && npm run format:check && npm run build"
   },
   "keywords": [],
   "author": "",
@@ -182,11 +178,21 @@ Seu `package.json` fica assim — a única linha nova é a da biblioteca em `dep
     "prettier": "^3.9.6",
     "tsx": "^4.23.12",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.67.0",
-    "vitest": "^4.1.10"
+    "typescript-eslint": "^8.67.0"
   }
 }
 ```
+
+_(Os números das versões podem variar um pouco — o npm instala o mais recente dentro da faixa
+permitida. O que precisa bater são os **nomes** dos pacotes e os **scripts**.)_
+
+> [!TIP]
+> Repare em `dependencies` × `devDependencies`. Três coisas rodam no servidor de produção: o
+> **Fastify**, que atende as requisições, o **Zod**, que valida, e a **ponte** entre os dois.
+> Todo o resto — compilador, linter, formatador — é ferramenta nossa, de desenvolvimento.
+>
+> Essa separação não é burocracia: é o que mantém o que vai para o servidor pequeno e com
+> menos superfície de ataque.
 
 ---
 
@@ -394,10 +400,9 @@ Hoje o `/health` responde tudo para todo mundo. Vamos separar.
 junto o tempo de vida do processo e o ambiente é dar informação de graça para quem estiver
 observando de fora, sem ganho nenhum para quem precisa dela.
 
-E há uma diferença conceitual que aparece mais adiante no curso: um processo pode estar **de
-pé** e ainda assim **não pronto** — por exemplo, subiu mas ainda não conseguiu falar com o
-banco de dados. Quem decide se o tráfego pode chegar precisa da segunda resposta, não da
-primeira.
+E há uma diferença conceitual que aparece mais adiante: um processo pode estar **de pé** e
+ainda assim **não pronto** — por exemplo, subiu mas ainda não conseguiu falar com o banco de
+dados. Quem decide se o tráfego pode chegar precisa da segunda resposta, não da primeira.
 
 ### Passo 1: O service, com um método para cada pergunta
 
@@ -410,8 +415,9 @@ Deixe `src/modules/health/health.service.ts` **exatamente** assim:
  * Concentra a lógica de negócio da funcionalidade de Health Check (checagem de
  * saúde). É ele quem sabe COMO montar a resposta; o controller apenas pede.
  *
- * Separar a lógica (aqui) da camada HTTP (controller) é o que nos permite testar
- * esta classe sem simular uma requisição da internet.
+ * Separar a lógica (aqui) da camada HTTP (controller) mantém cada uma com uma
+ * responsabilidade só: esta classe não sabe que existe HTTP, e é por isso que
+ * uma mudança na forma de responder não a alcança.
  */
 
 import { env } from '../../shared/env/index.ts'
@@ -487,8 +493,8 @@ import type { HealthService } from './health.service.ts'
 export class HealthController {
   /**
    * Recebe o service pronto, por parâmetro do construtor, em vez de criá-lo aqui
-   * dentro. Isso se chama injeção de dependência e é o que nos permitirá, nos
-   * testes, entregar um service falso para verificar o controller isoladamente.
+   * dentro. Isso se chama injeção de dependência: quem cria o controller é quem
+   * decide qual service ele recebe, e trocar essa peça não exige abrir esta classe.
    */
   constructor(private readonly healthService: HealthService) {}
 
@@ -606,8 +612,9 @@ Falta ligar a ponte. Deixe `src/app.ts` **exatamente** assim:
  *   4. Registrar as rotas de cada módulo.
  *
  * Separamos a montagem do app (aqui) da inicialização do servidor (`server.ts`)
- * para facilitar os testes automatizados: nos testes importamos apenas o app,
- * sem precisar ocupar uma porta de rede.
+ * porque são duas responsabilidades diferentes: uma decide quais rotas e
+ * plugins a aplicação tem, a outra decide em qual endereço ela atende. Quem
+ * monta a aplicação não precisa saber nada sobre rede.
  */
 
 import Fastify from 'fastify'
@@ -618,31 +625,15 @@ import { errorHandler, notFoundHandler } from './shared/errors/error-handler.ts'
 import { configurarMensagensEmPortugues } from './shared/validation/zod-locale.ts'
 
 /**
- * Opções de montagem da aplicação.
- */
-export interface BuildAppOptions {
-  /**
-   * Liga ou desliga o registro de eventos (logger).
-   *
-   * O padrão é ligado. Nos testes automatizados passamos `false`: sem isso, cada
-   * requisição simulada imprimiria várias linhas de log e o resultado dos testes
-   * ficaria impossível de ler.
-   */
-  logger?: boolean
-}
-
-/**
  * Fábrica da aplicação Fastify.
  *
- * @param options Ajustes opcionais de montagem.
- * @returns Instância do Fastify já configurada, pronta para receber requisições
- *          ou para ser usada em testes.
+ * @returns Instância do Fastify já configurada, pronta para receber requisições.
  */
-export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
+export function buildApp(): FastifyInstance {
   const app = Fastify({
     // O Fastify já vem com o Pino, um dos loggers mais rápidos do Node.
     // Deixá-lo ligado nos dá o registro de cada requisição sem escrever uma linha.
-    logger: options.logger ?? true,
+    logger: true,
   })
 
   // Toda mensagem de validação sai em português, inclusive as que o Zod gera
@@ -696,7 +687,7 @@ GET http://localhost:3333/health/ready
 {
   "status": "ok",
   "uptime": 9.86,
-  "timestamp": "2026-08-17T17:06:45.921Z",
+  "timestamp": "2026-08-19T17:06:45.921Z",
   "environment": "development"
 }
 ```
@@ -722,8 +713,8 @@ O `/health` não recebe nada, então precisamos de uma rota de exemplo para ver 
 validada. Vamos criar uma **descartável**, e apagá-la no fim do capítulo.
 
 > [!CAUTION]
-> Assim como o `exemplo-bagunca.ts` da Aula 03, esta rota existe só para o experimento. Nunca
-> deixe rota de mentira em uma API de verdade.
+> Assim como o `exemplo-bagunca.ts` da Aula 03 e a rota `/vazamento` da Aula 05, esta rota
+> existe só para o experimento. Nunca deixe rota de mentira em uma API de verdade.
 
 Abra `src/modules/health/health.routes.ts` e acrescente, **temporariamente**, antes do
 fechamento da função:
@@ -751,7 +742,22 @@ Você vai precisar do import do Zod no topo do arquivo, também temporário:
 import { z } from 'zod'
 ```
 
-Suba a API e experimente:
+Agora acrescente as quatro requisições ao seu `requisicoes/erros.http`, também
+temporariamente, e dispare uma a uma:
+
+```http
+### TEMPORÁRIO — experimento do Capítulo 7 da Aula 06
+GET {{host}}/exemplo/protocolo/123
+
+### TEMPORÁRIO — "abc" não vira número
+GET {{host}}/exemplo/protocolo/abc
+
+### TEMPORÁRIO — é número, mas não é positivo
+GET {{host}}/exemplo/protocolo/-5
+
+### TEMPORÁRIO — é número, mas não é inteiro
+GET {{host}}/exemplo/protocolo/3.7
+```
 
 | Requisição                   | O que acontece                       |
 | :--------------------------- | :----------------------------------- |
@@ -774,7 +780,14 @@ a função do handler **nem é executada**. O Fastify recusa antes. Essa é a di
 validar na porta e validar lá dentro: no segundo caso, você já teria dado inválido circulando
 pelo seu código.
 
-**Agora apague** a rota temporária e o import do Zod.
+> [!TIP]
+> **Como provar a afirmação 3, e não só acreditar nela.** Acrescente um
+> `app.log.info('o handler rodou')` como primeira linha do handler. Chame `/123` — a linha
+> aparece no terminal. Chame `/abc` — ela **não** aparece. A recusa aconteceu antes.
+>
+> É a mesma ideia da Aula 05: não acredite, provoque e olhe.
+
+**Não apague ainda** — o próximo capítulo usa essa rota. Ele avisa quando ela sai.
 
 ---
 
@@ -794,7 +807,7 @@ Está em português — o Capítulo 4 resolveu isso. Mas repare no começo da me
 `params/numero`. Isso é o formato interno da ferramenta, com a barra e o nome técnico da parte
 da requisição. Quem consome a nossa API não deveria precisar aprender esse formato.
 
-Vamos melhorar, no lugar onde toda mensagem de erro já passa: o handler da Aula 06.
+Vamos melhorar, no lugar onde toda mensagem de erro já passa: o handler da Aula 05.
 
 Abra `src/shared/errors/error-handler.ts` e acrescente, logo antes da função `errorHandler`:
 
@@ -1039,9 +1052,9 @@ Agora a resposta fica assim:
 > [!NOTE]
 > **Repare no que NÃO precisou ser feito.** Não criamos um tratamento de erro para a rota
 > nova. Não escrevemos `try/catch` em lugar nenhum. O erro de validação caiu no mesmo handler
-> que já existia desde a Aula 06, e saiu no mesmo formato de todos os outros erros da API.
+> que já existia desde a Aula 05, e saiu no mesmo formato de todos os outros erros da API.
 >
-> Foi exatamente isso que a Aula 06 prometeu. Quando a estrutura está certa, a funcionalidade
+> Foi exatamente isso que a Aula 05 prometeu. Quando a estrutura está certa, a funcionalidade
 > nova chega quase de graça.
 
 ### Um limite honesto da tradução automática
@@ -1066,467 +1079,26 @@ numero: z.coerce.number({ error: 'precisa ser um número' }).int().positive({
 **A regra prática:** deixe a mensagem automática onde ela já resolve, e escreva a sua onde o
 cidadão vai ler.
 
----
+### Agora sim: desmonte o andaime
 
-## 🧪 Capítulo 9: Os testes que provam o contrato
+A rota `/exemplo/protocolo/:numero` cumpriu o papel. **Apague**, nesta ordem:
 
-O teste mais valioso desta aula é o que verifica uma **ausência**: que o campo não declarado
-não aparece.
+1. O bloco da rota temporária, em `health.routes.ts`.
+2. O `import { z } from 'zod'` no topo daquele arquivo.
+3. Os quatro blocos marcados como `### TEMPORÁRIO` no `requisicoes/erros.http`.
 
-Deixe `src/modules/health/health.spec.ts` **exatamente** assim:
-
-```typescript
-/**
- * Testes da funcionalidade de Health Check
- *
- * Repare no que este arquivo **não** faz: ele nunca abre uma porta de rede.
- *
- * Usamos `buildApp()` para montar a aplicação em memória e o `app.inject()` do
- * Fastify para simular uma requisição HTTP por dentro. É exatamente para isso
- * que `app.ts` é separado de `server.ts`: montar a aplicação e subir o servidor
- * são responsabilidades diferentes, e o teste só precisa da primeira.
- *
- * O teste mais importante deste arquivo é o do campo não declarado: ele prova
- * que o contrato de resposta impede vazamento mesmo quando alguém, sem querer,
- * devolve mais do que deveria.
- */
-
-import { describe, expect, it } from 'vitest'
-import { buildApp } from '../../app.ts'
-import { HealthService } from './health.service.ts'
-
-describe('HealthService', () => {
-  it('responde com status "ok"', () => {
-    const service = new HealthService()
-
-    expect(service.getStatus().status).toBe('ok')
-  })
-
-  it('informa há quanto tempo a aplicação está no ar', () => {
-    const service = new HealthService()
-
-    // `uptime` é o tempo em segundos desde que o processo subiu. Não dá para
-    // prever o valor exato, então verificamos a única coisa que sempre vale:
-    // ele nunca pode ser negativo.
-    expect(service.getReadiness().uptime).toBeGreaterThanOrEqual(0)
-  })
-
-  it('devolve a data no formato universal ISO 8601', () => {
-    const service = new HealthService()
-    const { timestamp } = service.getReadiness()
-
-    // Se o texto puder ser convertido de volta para uma data válida, o formato
-    // está correto. Data inválida vira `NaN` ao ser convertida.
-    expect(Number.isNaN(new Date(timestamp).getTime())).toBe(false)
-  })
-})
-
-describe('GET /health', () => {
-  it('responde com código 200', async () => {
-    const app = buildApp({ logger: false })
-
-    const resposta = await app.inject({ method: 'GET', url: '/health' })
-
-    expect(resposta.statusCode).toBe(200)
-
-    await app.close()
-  })
-
-  it('devolve apenas o status, e nada além disso', async () => {
-    const app = buildApp({ logger: false })
-
-    const resposta = await app.inject({ method: 'GET', url: '/health' })
-
-    // Comparamos o objeto inteiro, e não campo por campo, de propósito: assim o
-    // teste falha se alguém acrescentar qualquer coisa a esta resposta. Quem
-    // monitora só precisa saber se a API responde.
-    expect(resposta.json()).toEqual({ status: 'ok' })
-
-    await app.close()
-  })
-
-  it('NÃO deixa vazar campo que o contrato não declara', async () => {
-    const app = buildApp({ logger: false })
-
-    // Simulamos o descuido mais comum: alguém acrescenta um dado ao retorno do
-    // service — aqui, algo que jamais poderia sair da API — e não se lembra de
-    // que aquela resposta é pública.
-    const service = new HealthService()
-    service.getStatus = () =>
-      ({ status: 'ok', caminhoInterno: 'C:/servidor/producao/api' }) as ReturnType<
-        HealthService['getStatus']
-      >
-
-    const resposta = await app.inject({ method: 'GET', url: '/health' })
-
-    // O campo não sai. Não porque alguém lembrou de removê-lo, mas porque o
-    // schema da rota não o declara — e o Fastify monta a resposta usando apenas
-    // o que está declarado.
-    expect(resposta.body).not.toContain('caminhoInterno')
-    expect(resposta.body).not.toContain('C:/servidor')
-
-    await app.close()
-  })
-
-  it('devolve 404 em um endereço que não existe', async () => {
-    const app = buildApp({ logger: false })
-
-    const resposta = await app.inject({ method: 'GET', url: '/endereco-que-nao-existe' })
-
-    // Testar o caminho que dá errado é tão importante quanto testar o que dá
-    // certo. É o que garante que a API não responda "ok" para qualquer coisa.
-    expect(resposta.statusCode).toBe(404)
-
-    await app.close()
-  })
-})
-
-describe('GET /health/ready', () => {
-  it('responde com código 200', async () => {
-    const app = buildApp({ logger: false })
-
-    const resposta = await app.inject({ method: 'GET', url: '/health/ready' })
-
-    expect(resposta.statusCode).toBe(200)
-
-    await app.close()
-  })
-
-  it('devolve os quatro campos combinados', async () => {
-    const app = buildApp({ logger: false })
-
-    const resposta = await app.inject({ method: 'GET', url: '/health/ready' })
-    const corpo = resposta.json()
-
-    expect(corpo).toHaveProperty('status', 'ok')
-    expect(corpo).toHaveProperty('uptime')
-    expect(corpo).toHaveProperty('timestamp')
-    expect(corpo).toHaveProperty('environment')
-
-    await app.close()
-  })
-})
-```
-
-Agora os testes da validação de entrada. Em `src/shared/errors/errors.spec.ts`, acrescente
-estes imports no topo:
-
-```typescript
-import type { ZodTypeProvider } from 'fastify-type-provider-zod'
-import { z } from 'zod'
-```
-
-Acrescente a rota validada dentro de `montarAppDeTeste()`, logo antes do `return app`:
-
-```typescript
-  // Rota com entrada validada, para provar que a requisição fora do contrato é
-  // recusada antes de o handler rodar.
-  app.withTypeProvider<ZodTypeProvider>().get(
-    '/teste/protocolo/:numero',
-    {
-      schema: {
-        params: z.object({ numero: z.coerce.number().int().positive() }),
-        response: { 200: z.object({ numero: z.number() }) },
-      },
-    },
-    async (request, reply) => reply.send({ numero: request.params.numero }),
-  )
-```
-
-E, no fim do arquivo, o bloco de testes novo:
-
-```typescript
-describe('Validação de entrada', () => {
-  it('aceita a requisição que cumpre o contrato', async () => {
-    const app = montarAppDeTeste()
-
-    const resposta = await app.inject({ method: 'GET', url: '/teste/protocolo/123' })
-
-    expect(resposta.statusCode).toBe(200)
-    expect(resposta.json()).toEqual({ numero: 123 })
-
-    await app.close()
-  })
-
-  it('recusa entrada inválida com 400, no formato único de erro', async () => {
-    const app = montarAppDeTeste()
-
-    // "abc" não é número. O handler da rota nem chega a rodar.
-    const resposta = await app.inject({ method: 'GET', url: '/teste/protocolo/abc' })
-
-    expect(resposta.statusCode).toBe(400)
-
-    const corpo = resposta.json()
-    expect(corpo.statusCode).toBe(400)
-    expect(corpo.error).toBe('Bad Request')
-
-    await app.close()
-  })
-
-  it('explica o erro de validação em português, dizendo qual campo falhou', async () => {
-    const app = montarAppDeTeste()
-
-    const resposta = await app.inject({ method: 'GET', url: '/teste/protocolo/abc' })
-    const { message } = resposta.json()
-
-    // A mensagem precisa dizer três coisas: onde foi o erro, em qual campo, e o
-    // que se esperava. Tudo em português — uma API que responde em duas línguas
-    // obriga quem a consome a lidar com as duas.
-    expect(message).toContain('no endereço')
-    expect(message).toContain('numero')
-    expect(message).toContain('esperado')
-
-    await app.close()
-  })
-
-  it('recusa número negativo, que passa no tipo mas não na regra', async () => {
-    const app = montarAppDeTeste()
-
-    // `-5` é um número válido: quem valida só o tipo deixaria passar. O schema
-    // exige inteiro positivo, e é isso que barra.
-    const resposta = await app.inject({ method: 'GET', url: '/teste/protocolo/-5' })
-
-    expect(resposta.statusCode).toBe(400)
-
-    await app.close()
-  })
-})
-```
-
-O arquivo completo de testes de erro, ao final desta aula:
-
-```typescript
-/**
- * Testes do tratamento centralizado de erros
- *
- * O teste mais importante deste arquivo é o de vazamento: ele registra uma rota
- * que falha com uma mensagem parecida com a que um banco de dados produziria, e
- * verifica que **nada** daquele texto aparece na resposta.
- *
- * Repare que a rota que falha é criada aqui dentro, na instância do teste. Ela
- * não existe na aplicação — a API não ganha nenhuma rota de mentira só para ser
- * testada.
- */
-
-import { describe, expect, it } from 'vitest'
-import type { ZodTypeProvider } from 'fastify-type-provider-zod'
-import { z } from 'zod'
-import { buildApp } from '../../app.ts'
-import { AppError } from './app-error.ts'
-
-/**
- * Texto que imita o que um erro de banco de dados devolveria.
- *
- * É exatamente este tipo de mensagem que não pode chegar ao cliente: ela revela
- * o nome da tabela, o nome da coluna e o formato da consulta.
- */
-const MENSAGEM_INTERNA = "Unknown column 'cpf' in field list: SELECT * FROM cidadaos"
-
-/**
- * Monta a aplicação com duas rotas extras, usadas apenas nestes testes.
- */
-function montarAppDeTeste() {
-  const app = buildApp({ logger: false })
-
-  // Falha inesperada: alguém lançou um erro comum, vindo de fora do nosso código.
-  app.get('/teste/falha-inesperada', async () => {
-    throw new Error(MENSAGEM_INTERNA)
-  })
-
-  // Falha esperada: fomos nós que escrevemos a mensagem e escolhemos o código.
-  app.get('/teste/falha-esperada', async () => {
-    throw new AppError('Protocolo não encontrado', 404)
-  })
-
-  // Rota com entrada validada, para provar que a requisição fora do contrato é
-  // recusada antes de o handler rodar.
-  app.withTypeProvider<ZodTypeProvider>().get(
-    '/teste/protocolo/:numero',
-    {
-      schema: {
-        params: z.object({ numero: z.coerce.number().int().positive() }),
-        response: { 200: z.object({ numero: z.number() }) },
-      },
-    },
-    async (request, reply) => reply.send({ numero: request.params.numero }),
-  )
-
-  return app
-}
-
-describe('AppError', () => {
-  it('guarda a mensagem e o código de status recebidos', () => {
-    const erro = new AppError('Protocolo não encontrado', 404)
-
-    expect(erro.message).toBe('Protocolo não encontrado')
-    expect(erro.statusCode).toBe(404)
-  })
-
-  it('usa 400 quando o código não é informado', () => {
-    // 400 é o padrão porque o caso mais comum é a requisição ter chegado com
-    // algo errado — e é o lado seguro se alguém esquecer de escolher.
-    expect(new AppError('CPF inválido').statusCode).toBe(400)
-  })
-
-  it('se identifica como AppError no nome', () => {
-    // Sem isso, o log mostraria apenas "Error" e não haveria como separar um
-    // erro nosso de um erro vindo de biblioteca.
-    expect(new AppError('qualquer coisa').name).toBe('AppError')
-  })
-})
-
-describe('Handler global de erros', () => {
-  it('NÃO deixa vazar o detalhe interno de um erro inesperado', async () => {
-    const app = montarAppDeTeste()
-
-    const resposta = await app.inject({ method: 'GET', url: '/teste/falha-inesperada' })
-
-    // Este é o teste mais importante do arquivo. Verificamos o corpo bruto, e
-    // não campo por campo: assim o teste pega o vazamento mesmo que alguém, no
-    // futuro, acrescente um campo novo à resposta de erro.
-    expect(resposta.body).not.toContain('cidadaos')
-    expect(resposta.body).not.toContain('SELECT')
-    expect(resposta.body).not.toContain(MENSAGEM_INTERNA)
-
-    await app.close()
-  })
-
-  it('responde 500 com mensagem genérica quando o erro é inesperado', async () => {
-    const app = montarAppDeTeste()
-
-    const resposta = await app.inject({ method: 'GET', url: '/teste/falha-inesperada' })
-
-    expect(resposta.statusCode).toBe(500)
-    expect(resposta.json()).toEqual({
-      statusCode: 500,
-      error: 'Internal Server Error',
-      message: 'Erro interno do servidor. A equipe já foi avisada.',
-    })
-
-    await app.close()
-  })
-
-  it('mostra a mensagem inteira quando o erro é um AppError', async () => {
-    const app = montarAppDeTeste()
-
-    const resposta = await app.inject({ method: 'GET', url: '/teste/falha-esperada' })
-
-    expect(resposta.statusCode).toBe(404)
-    expect(resposta.json()).toEqual({
-      statusCode: 404,
-      error: 'Not Found',
-      message: 'Protocolo não encontrado',
-    })
-
-    await app.close()
-  })
-})
-
-describe('Handler de endereço não encontrado', () => {
-  it('responde 404 no mesmo formato dos demais erros', async () => {
-    const app = buildApp({ logger: false })
-
-    const resposta = await app.inject({ method: 'GET', url: '/endereco-que-nao-existe' })
-
-    expect(resposta.statusCode).toBe(404)
-    expect(resposta.json()).toEqual({
-      statusCode: 404,
-      error: 'Not Found',
-      message: 'Endereço não encontrado: GET /endereco-que-nao-existe',
-    })
-
-    await app.close()
-  })
-
-  it('responde 404 também para um método diferente de GET', async () => {
-    const app = buildApp({ logger: false })
-
-    const resposta = await app.inject({ method: 'POST', url: '/health' })
-
-    // A rota `/health` existe, mas apenas para GET. Para o Fastify, caminho certo
-    // com método errado também é "não encontrado".
-    expect(resposta.statusCode).toBe(404)
-    expect(resposta.json().message).toBe('Endereço não encontrado: POST /health')
-
-    await app.close()
-  })
-})
-
-describe('Validação de entrada', () => {
-  it('aceita a requisição que cumpre o contrato', async () => {
-    const app = montarAppDeTeste()
-
-    const resposta = await app.inject({ method: 'GET', url: '/teste/protocolo/123' })
-
-    expect(resposta.statusCode).toBe(200)
-    expect(resposta.json()).toEqual({ numero: 123 })
-
-    await app.close()
-  })
-
-  it('recusa entrada inválida com 400, no formato único de erro', async () => {
-    const app = montarAppDeTeste()
-
-    // "abc" não é número. O handler da rota nem chega a rodar.
-    const resposta = await app.inject({ method: 'GET', url: '/teste/protocolo/abc' })
-
-    expect(resposta.statusCode).toBe(400)
-
-    const corpo = resposta.json()
-    expect(corpo.statusCode).toBe(400)
-    expect(corpo.error).toBe('Bad Request')
-
-    await app.close()
-  })
-
-  it('explica o erro de validação em português, dizendo qual campo falhou', async () => {
-    const app = montarAppDeTeste()
-
-    const resposta = await app.inject({ method: 'GET', url: '/teste/protocolo/abc' })
-    const { message } = resposta.json()
-
-    // A mensagem precisa dizer três coisas: onde foi o erro, em qual campo, e o
-    // que se esperava. Tudo em português — uma API que responde em duas línguas
-    // obriga quem a consome a lidar com as duas.
-    expect(message).toContain('no endereço')
-    expect(message).toContain('numero')
-    expect(message).toContain('esperado')
-
-    await app.close()
-  })
-
-  it('recusa número negativo, que passa no tipo mas não na regra', async () => {
-    const app = montarAppDeTeste()
-
-    // `-5` é um número válido: quem valida só o tipo deixaria passar. O schema
-    // exige inteiro positivo, e é isso que barra.
-    const resposta = await app.inject({ method: 'GET', url: '/teste/protocolo/-5' })
-
-    expect(resposta.statusCode).toBe(400)
-
-    await app.close()
-  })
-})
-```
-
-Rode:
-
-```bash
-npm test
-```
-
-```
- Test Files  3 passed (3)
-      Tests  34 passed (34)
-```
-
-Eram 27 na Aula 06. Os sete novos protegem exatamente o que esta aula construiu.
+Confira com `git diff` que não sobrou nenhum `/exemplo/` no projeto. É a mesma disciplina da
+Aula 05: andaime é para ser montado **e desmontado**.
 
 ---
 
-## 📄 Capítulo 10: Atualizando o README e as requisições
+## 🧪 Capítulo 9: A prova do contrato, guardada no repositório
 
-Quem acrescenta rota, atualiza a documentação. Abra `requisicoes/health.http` e deixe assim:
+O experimento mais importante desta aula é o do Capítulo 1: **um campo que ninguém declarou
+não sai na resposta**. Vamos guardar a forma de reconferir isso, para você não depender da
+memória daqui a três meses.
+
+Deixe `requisicoes/health.http` **exatamente** assim:
 
 ```http
 # Requisições da funcionalidade de Health Check
@@ -1541,27 +1113,69 @@ Quem acrescenta rota, atualiza a documentação. Abra `requisicoes/health.http` 
 @host = http://localhost:3333
 
 ### Verificar se a API está no ar (rota de vida)
+# Esperado: 200 com {"status":"ok"} e NADA MAIS.
+#
+# Este "nada mais" é o contrato de saída em ação. Se você algum dia vir um campo
+# a mais aqui, não procure quem o escreveu: procure o `schema` da rota em
+# `health.routes.ts`. Ou ele sumiu, ou alguém o alterou.
 GET {{host}}/health
 
 ### Verificar se a API está pronta para atender (rota de prontidão)
+# Esperado: 200 com exatamente quatro campos — status, uptime, timestamp e
+# environment. Nem três, nem cinco.
 GET {{host}}/health/ready
 
 ### Conferir que um endereço inexistente responde no formato de erro da API
+# Esperado: 404 com statusCode, error e message, em português.
 GET {{host}}/rota-que-nao-existe
 ```
 
-E o `README.md`, na seção `## Rotas`, agora com as duas:
+### O procedimento de conferência do contrato
+
+Este é o roteiro para provar, em um minuto, que a alfândega está de pé. Rode-o sempre que
+mexer em um schema:
+
+| #   | O que fazer                                                            | O que precisa acontecer                  |
+| --- | :--------------------------------------------------------------------- | :--------------------------------------- |
+| 1   | Acrescente `versaoDoNode: process.version` ao retorno de `getStatus()` | O editor sublinha em vermelho na hora    |
+| 2   | Acrescente `versaoDoNode: z.string()` ao `healthResponseSchema`        | O vermelho some                          |
+| 3   | Suba a API e chame `GET /health`                                       | O campo **aparece** — está no contrato   |
+| 4   | Remova a linha do **schema**, mas deixe a do **service**               | O editor volta a reclamar                |
+| 5   | Suba a API e chame `GET /health` de novo                               | O campo **sumiu** — não está no contrato |
+| 6   | Desfaça tudo                                                           | `git diff` limpo                         |
+
+O passo 5 é a aula inteira. O código continuava devolvendo o campo; o contrato é que decidiu
+que ele não sai.
+
+> [!IMPORTANT]
+> **Repare no que este procedimento testa: uma ausência.**
+>
+> É o tipo de coisa que ninguém confere sozinho, porque não dá sintoma. Um campo que vaza não
+> quebra nada, não gera erro, não aparece no log. Ele só fica lá, sendo entregue para quem
+> pedir, até o dia em que alguém repara.
+>
+> **Ao conferir segurança, procure a ausência da informação — não a presença do formato.**
+
+---
+
+## 📄 Capítulo 10: Atualizando o README
+
+Quem acrescenta rota, atualiza a documentação. No `README.md`, a seção `## Rotas` agora tem
+as duas:
 
 ```markdown
 ## Rotas
 
-| Método | Rota            | O que devolve                                        |
-| :----- | :-------------- | :--------------------------------------------------- |
-| `GET`  | `/health`       | **Vida:** apenas `{ "status": "ok" }`                |
-| `GET`  | `/health/ready` | **Prontidão:** status, uptime, momento e ambiente    |
+| Método | Rota            | O que devolve                                     |
+| :----- | :-------------- | :------------------------------------------------ |
+| `GET`  | `/health`       | **Vida:** apenas `{ "status": "ok" }`             |
+| `GET`  | `/health/ready` | **Prontidão:** status, uptime, momento e ambiente |
 
 Toda rota declara o contrato da resposta com Zod. Campo que não está no contrato **não sai**,
 mesmo que o código o devolva por engano.
+
+As requisições de exemplo de cada rota estão em `requisicoes/`, prontas para disparar pelo
+VS Code com a extensão REST Client.
 ```
 
 ---
@@ -1584,11 +1198,11 @@ git push
 npm run check
 ```
 
-Precisa terminar sem nenhum erro, com os 34 testes passando.
+Precisa terminar sem nenhum erro.
 
 ### 2. As duas rotas respondem o que devem
 
-Com `npm run dev` rodando:
+Com `npm run dev` rodando, dispare pelo `requisicoes/health.http`:
 
 | Rota            | Resposta esperada                   |
 | :-------------- | :---------------------------------- |
@@ -1597,17 +1211,25 @@ Com `npm run dev` rodando:
 
 ### 3. O campo extra não vaza
 
-Acrescente qualquer campo ao retorno de `getStatus()` e chame `/health`. Se ele aparecer na
-resposta, o schema não está sendo aplicado — confira se o `setSerializerCompiler` está no
-`app.ts` e se a rota declara `schema`.
+Faça o procedimento de seis passos do Capítulo 9. Se o campo aparecer no passo 5, o schema não
+está sendo aplicado — confira se o `setSerializerCompiler` está no `app.ts` e se a rota declara
+`schema`.
 
-### 4. A rota descartável foi apagada
+### 4. A mensagem de validação sai em português e sem barra
+
+Se você ainda vê `params/numero` no começo da mensagem, o caso `FST_ERR_VALIDATION` não foi
+acrescentado ao `errorHandler`, ou foi acrescentado **depois** do caso `statusCode < 500` — e
+aí aquele o captura antes.
+
+### 5. A rota descartável foi apagada
 
 ```bash
 git status
+git diff
 ```
 
-Não deve haver nenhuma rota `/exemplo/...` no seu `health.routes.ts`.
+Não deve haver nenhuma rota `/exemplo/...` no seu `health.routes.ts`, nenhum bloco
+`### TEMPORÁRIO` no `erros.http`, e nenhum `import { z }` sobrando nas rotas.
 
 ---
 
@@ -1632,11 +1254,15 @@ validação. Ela precisa rodar antes — por isso está no `env/index.ts` e no `
 **`z.locales is not a function`**
 Sua versão do Zod é anterior à 4. Confira com `npm list zod`; este projeto usa a 4.
 
+**O `health.service.ts` não compila depois do Passo 1**
+A interface `HealthStatus` saiu daquele arquivo e virou tipo derivado do schema. Se o editor
+ainda a procura, é porque o import de `health.schema.ts` não foi acrescentado.
+
 ---
 
 ## 🏋️ Exercícios
 
-Gabarito em [`exercicios/07-gabarito.md`](./exercicios/07-gabarito.md).
+Gabarito em [`exercicios/06-gabarito.md`](./exercicios/06-gabarito.md).
 
 **1. Descubra o que o contrato não protege**
 Troque, no `readinessResponseSchema`, o tipo de `uptime` de `z.number()` para `z.string()`.
@@ -1658,6 +1284,11 @@ Sem rodar nada, leia apenas `health.schema.ts` e responda: quantos campos a rota
 devolve, e quais valores `environment` aceita? Compare com o esforço de descobrir isso lendo o
 service. É esse o segundo ganho do contrato.
 
+**5. A ordem dos casos importa**
+No `errorHandler`, mova o caso `FST_ERR_VALIDATION` para **depois** do caso
+`statusCode < 500`. Chame `/exemplo/protocolo/abc`. A mensagem voltou ao formato com barra?
+Por quê? O que isso ensina sobre a ordem de uma sequência de `if`?
+
 ---
 
 ## 🎯 Resumo e Próximos Passos
@@ -1671,7 +1302,7 @@ O que ficou pronto:
 - `/health` e `/health/ready` separadas, cada uma respondendo à sua pergunta.
 - Entrada validada antes de o seu código rodar, com tipos derivados do mesmo schema.
 - Mensagens de validação em português, no formato único de erro da API.
-- 34 testes, incluindo um que prova uma **ausência**.
+- O procedimento de conferência do contrato, guardado junto das requisições.
 
 E um princípio que vale além desta aula: **prefira a garantia à disciplina**. Toda vez que
 você puder escolher entre "todo mundo precisa lembrar de X" e "não tem como esquecer de X", a
@@ -1679,9 +1310,22 @@ segunda opção é a que continua funcionando daqui a um ano, com outra equipe.
 
 **E agora?**
 
-Os schemas que vocês escreveram hoje têm um segundo uso, e ele é quase de graça: eles
-descrevem a API inteira. A partir deles é possível gerar uma **documentação navegável**, em
-que qualquer pessoa vê as rotas, os formatos e consegue testá-las pelo navegador — sem
-ninguém escrever documentação à mão.
+Esta é a última aula desta trilha, e vale olhar para trás: em seis aulas vocês saíram de uma
+pasta vazia e chegaram a uma API que sobe, é padronizada por ferramenta, lê configuração
+validada, não conta ao mundo o que não deve quando falha, não confia no que chega de fora e
+devolve exatamente o que foi combinado.
 
-Até a próxima! 🚀
+Isso é um assunto inteiro fechado. A trilha continua depois — os schemas que vocês escreveram
+hoje têm um segundo uso, quase de graça: eles descrevem a API inteira, e dá para gerar a
+partir deles uma **documentação navegável** que não consegue ficar desatualizada. Depois vêm
+as defesas contra quem abusa da API, o empacotamento que faz ela rodar igual em qualquer
+máquina, o banco de dados, e a primeira rota que existe para alguém de fora.
+
+Cada um desses degraus resolve uma dor específica. Eles chegam quando estas seis aulas
+estiverem firmes — e "firmes" quer dizer que você consegue explicar cada arquivo do seu
+projeto para outra pessoa.
+
+Até lá, o melhor exercício é o mais simples: abra o projeto amanhã e leia o código que você
+escreveu hoje. Se estiver claro, você escreveu bem.
+
+Parabéns pela trilha concluída! 🚀

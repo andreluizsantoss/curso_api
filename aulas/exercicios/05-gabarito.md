@@ -2,229 +2,269 @@
 
 ---
 
-## 1. Veja falhar antes de confiar
+## 1. Prove que o log recebe o que a resposta esconde
 
-Alterando, por exemplo, `expect(service.getStatus().status).toBe('ok')` para `'okay'`:
-
-```
- FAIL  src/modules/health/health.spec.ts > HealthService > responde com status "ok"
-
-AssertionError: expected 'ok' to be 'okay' // Object.is equality
-
-Expected: "okay"
-Received: "ok"
-
- ❯ src/modules/health/health.spec.ts:16:42
-     14|   it('responde com status "ok"', () => {
-     15|     const service = new HealthService()
-     16|     expect(service.getStatus().status).toBe('ok')
-       |                                        ^
-```
-
-### Quatro informações que a mensagem entrega
-
-| O que aparece                                    | Para que serve                                                             |
-| :----------------------------------------------- | :------------------------------------------------------------------------- |
-| **O nome do teste**                              | Diz qual comportamento quebrou, em português, antes de você olhar código   |
-| **`Expected` e `Received`**                      | Mostra os dois valores lado a lado. Metade dos bugs se resolve só com isso |
-| **O arquivo e a linha** (`health.spec.ts:16:42`) | Leva direto ao ponto, sem procurar                                         |
-| **O trecho de código com o `^`**                 | Aponta a coluna exata da asserção que falhou                               |
-
-### Por que este exercício existe
-
-Um teste que você **nunca viu falhar** não é confiável.
-
-Imagine um teste escrito errado, que passa sempre — mesmo com o código quebrado. Ele te dá
-uma sensação de segurança falsa, que é pior do que não ter teste nenhum: você deixa de
-verificar na mão porque "tem teste cobrindo".
-
-Por isso o hábito: ao escrever um teste novo, **quebre-o de propósito uma vez** e confirme
-que ele acusa. Depois conserte. Leva cinco segundos e vale por muito.
-
----
-
-## 2. Um teste novo, do zero
+Rota temporária, dentro do `buildApp()`, logo antes do `return app`:
 
 ```typescript
-it('informa o ambiente em que está rodando', () => {
-  const service = new HealthService()
-
-  expect(service.getStatus().environment).toBe('test')
+// ⚠️ TEMPORÁRIA — apagar depois do exercício.
+app.get('/vazamento', async () => {
+  throw new Error("Unknown column 'cpf' in field list: SELECT * FROM cidadaos")
 })
 ```
 
-O valor é **`'test'`**.
-
-### Como descobrir sem adivinhar
-
-Foi o que a dica do enunciado sugeria: escreva o valor errado de propósito e deixe a mensagem
-te contar.
-
-```
-Expected: "development"
-Received: "test"
-```
-
-Pronto — o próprio teste respondeu.
-
-Essa é uma técnica legítima e muito usada, inclusive por gente experiente: quando você não
-sabe qual valor esperar, escreva qualquer um, rode, e leia o `Received`. É mais rápido e mais
-confiável do que procurar na documentação.
-
-### Por que `'test'` e não `'development'`
-
-O Vitest define `NODE_ENV=test` sozinho, antes de carregar os arquivos. Faz sentido: é assim
-que uma aplicação sabe que está rodando dentro de uma bateria de testes e pode se comportar de
-acordo — usar um banco de testes em vez do real, por exemplo.
-
-Repare que isso só funciona porque o nosso `envSchema`, da Aula 04, **aceita** `'test'` na
-lista de ambientes válidos. Se aceitasse apenas `development` e `production`, a validação
-derrubaria a aplicação no primeiro teste.
-
-Aquela decisão foi tomada quatro capítulos antes de existir um teste sequer. Não foi sorte —
-foi pensar em qual seria o próximo passo.
-
----
-
-## 3. Teste o método HTTP errado
-
-```typescript
-it('devolve 404 quando o método HTTP não é o esperado', async () => {
-  const app = buildApp({ logger: false })
-
-  const resposta = await app.inject({ method: 'POST', url: '/health' })
-
-  expect(resposta.statusCode).toBe(404)
-
-  await app.close()
-})
-```
-
-**O status é 404**, e o corpo é:
+**Na aba de resposta do REST Client:**
 
 ```json
-{ "message": "Route POST:/health not found", "error": "Not Found", "statusCode": 404 }
+{
+  "statusCode": 500,
+  "error": "Internal Server Error",
+  "message": "Erro interno do servidor. A equipe já foi avisada."
+}
 ```
 
-### Se você respondeu 405, seu raciocínio estava certo
+**No terminal onde o `npm run dev` está rodando:**
 
-Existe um código HTTP feito exatamente para esta situação: o **405 Method Not Allowed**, que
-significa "esse endereço existe, mas não aceita esse método".
+```json
+{
+  "level": 50,
+  "time": 1786800000000,
+  "reqId": "req-1",
+  "err": {
+    "type": "Error",
+    "message": "Unknown column 'cpf' in field list: SELECT * FROM cidadaos",
+    "stack": "Error: Unknown column 'cpf' in field list: SELECT * FROM cidadaos\n    at ..."
+  },
+  "msg": "Erro não tratado durante a requisição"
+}
+```
 
-Muita gente experiente responderia 405. **O Fastify devolve 404** — e o motivo é interessante.
+**Onde está o stack trace:** só no terminal, dentro do campo `err.stack`.
+**Onde está o nome da tabela:** no mesmo lugar, dentro de `err.message`.
 
-Para o Fastify, uma rota é a combinação **método + caminho**. `GET /health` e `POST /health`
-são duas rotas completamente diferentes. Como só registramos a primeira, a segunda
-simplesmente **não existe** — e o que não existe é 404.
+Essa é a resposta que a aula inteira persegue. A informação **não foi perdida** — ela está
+completa, com nome de tabela, nome de coluna e a linha exata do código onde o erro nasceu. O
+que mudou foi o **canal**: ela vai para o log estruturado, que fica no servidor, e não para a
+resposta HTTP, que vai para a internet.
 
-Repare na mensagem: `Route POST:/health not found`. O método faz parte da identidade da rota.
+Repare também no `"level": 50`. No Pino, 50 é o nível `error`. É por isso que o log é
+estruturado: dá para pedir "me mostre tudo com level 50 da última hora" — algo impossível com
+texto solto.
 
-### A lição que fica
-
-O importante deste exercício não é decorar 404 ou 405. É perceber que **o comportamento real
-nem sempre é o que a intuição diz**, e que o jeito de descobrir é **rodar e observar** — não
-supor.
-
-Essa é a mesma habilidade da questão 4 do gabarito da Aula 03. Ela vai se repetir a carreira
-inteira.
+E repare no `reqId`. O Fastify numera cada requisição. Se o mesmo cidadão relatar "deu erro
+às 14h32", dá para achar exatamente a requisição dele e ver o erro real por trás da mensagem
+genérica que ele viu.
 
 ---
 
-## 4. Quebre o projeto e veja o portão funcionar
+## 2. Um erro esperado de verdade
 
-Trocando o `200` por `201` no `health.controller.ts` e rodando `npm run check`:
+```typescript
+// ⚠️ TEMPORÁRIA — apagar depois do exercício.
+app.get('/protocolo/:numero', async (request) => {
+  const { numero } = request.params as { numero: string }
 
-```
-> npm run lint && npm run format:check && npm run test && npm run build
+  if (numero === '0') {
+    throw new AppError('Protocolo não encontrado', 404)
+  }
 
-> eslint src                    ✅ passou
-
-> prettier --check .            ✅ passou
-
-> vitest run
- ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
- AssertionError: expected 201 to be 200 // Object.is equality
-
- Test Files  1 failed | 1 passed (2)
-      Tests  1 failed | 18 passed (19)
+  return { numero, status: 'em andamento' }
+})
 ```
 
-**Parou na terceira etapa. O build não chegou a rodar.**
+O import no topo do `app.ts`:
 
-### O papel do `&&`
-
-O `&&` significa **"só execute o próximo se o anterior deu certo"**.
-
-```
-lint  &&  format:check  &&  test  &&  build
- ✅         ✅            ❌       (nem roda)
+```typescript
+import { AppError } from './shared/errors/app-error.ts'
 ```
 
-Como o `test` falhou, a corrente parou ali. O `npm run check` inteiro terminou com código de
-saída diferente de zero — o combinado universal para "deu errado".
+As duas requisições, acrescentadas ao `erros.http`:
 
-### Por que parar em vez de continuar
+```http
+### TEMPORÁRIO — exercício 2: protocolo que não existe
+GET {{host}}/protocolo/0
 
-Poderia parecer melhor rodar tudo e mostrar todos os problemas de uma vez. Mas parar na
-primeira falha é melhor por dois motivos:
+### TEMPORÁRIO — exercício 2: protocolo que existe
+GET {{host}}/protocolo/42
+```
 
-1. **Economia de tempo.** Se o teste falhou, o código está errado. Compilar código errado é
-   trabalho jogado fora.
-2. **Foco.** Uma lista com quinze problemas paralisa. Um problema por vez, na ordem, é o que
-   se consegue realmente resolver.
+**Disparando a primeira:**
 
-### E por que isso importa de verdade
+```json
+{
+  "statusCode": 404,
+  "error": "Not Found",
+  "message": "Protocolo não encontrado"
+}
+```
 
-Repare que apenas **um** teste falhou, entre 19. Uma alteração de um único caractere.
+**A mensagem apareceu inteira. Por quê?**
 
-Sem os testes, essa alteração passaria despercebida: o código compila, o lint aprova, a
-formatação está certa. A API subiria devolvendo `201 Created` para uma simples consulta de
-saúde — e o sistema de monitoramento, que espera `200`, começaria a reportar a API como fora
-do ar.
+Porque o handler perguntou `error instanceof AppError` e a resposta foi sim. Ao escrever
+`new AppError(...)`, quem programou a rota assumiu a responsabilidade pela mensagem: ela foi
+escrita em português, pensando em quem vai lê-la, e não contém nada sobre a estrutura interna
+do sistema.
 
-**O portão pegou.** É para isso que ele existe.
+Compare com o exercício 1: a mensagem do MySQL foi engolida porque veio marcada como um
+`Error` comum, e um `Error` comum pode conter qualquer coisa.
 
-Na Aula 06, esse mesmo `npm run check` vai rodar no GitHub a cada envio de código. Aí nem
-"esquecer de rodar" será possível.
+**A régua, em uma frase:** o handler não julga o conteúdo da mensagem — ele julga a
+**procedência** dela. Julgar conteúdo exigiria adivinhar; julgar procedência é uma
+verificação de uma linha, que nunca erra.
+
+> Um detalhe do `request.params as { numero: string }`: essa conversão manual existe porque a
+> rota ainda não tem schema. Quando a rota ganhar um, na próxima aula, o `as` desaparece — o
+> Zod passa a inferir o tipo sozinho, e o TypeScript sabe que `numero` é texto sem ninguém
+> prometer.
 
 ---
 
-## 5. `app.inject()` × subir o servidor de verdade
+## 3. O código que você não escolheu
 
-Resposta esperada, com suas palavras. Qualquer dois destes motivos valem:
+A rota:
 
-> **1. Velocidade.** Abrir e fechar uma porta de rede leva tempo. Com dezenas de testes, isso
-> vira minutos de espera a cada execução — e teste lento é teste que ninguém roda.
->
-> **2. Sem conflito de porta.** Se dois testes tentarem usar a porta 3333 ao mesmo tempo, um
-> deles falha com `EADDRINUSE`, sem que exista nenhum defeito no código. O `inject()` não
-> ocupa porta nenhuma, então esse problema simplesmente não existe.
->
-> **3. Funciona em qualquer ambiente.** A máquina que roda a verificação automática do GitHub
-> pode ter restrições de rede. Sem abrir porta, não há nada a restringir.
->
-> **4. Isolamento.** Sem porta aberta, nenhum programa de fora consegue interferir no teste. O
-> resultado depende só do nosso código.
+```typescript
+// ⚠️ TEMPORÁRIA — apagar depois do exercício.
+app.get('/proibido', async () => {
+  throw new AppError('Acesso negado', 403)
+})
+```
 
-### O que NÃO muda
+**A resposta:**
 
-Um ponto importante: o `inject()` **não é um atalho que testa menos**.
+```json
+{
+  "statusCode": 403,
+  "error": "Forbidden",
+  "message": "Acesso negado"
+}
+```
 
-A requisição percorre exatamente o mesmo caminho de uma requisição real: passa pelo
-roteamento do Fastify, pelos plugins, pelo controller, pelo service, e a resposta é montada e
-serializada do mesmo jeito. A única coisa que não acontece é o tráfego sair pela placa de rede.
+**Você escreveu a palavra "Forbidden" em algum lugar? Não.** Você escreveu apenas o número
+403 e a mensagem em português.
 
-É a diferença entre testar um motor num dinamômetro e testar o carro na rua: o motor trabalha
-de verdade nos dois casos.
+E é isso que o exercício queria mostrar. O `montarResposta` nunca soube o que é 403:
 
-### E o motivo mais bonito
+```typescript
+error: STATUS_CODES[statusCode] ?? 'Error',
+```
 
-Tudo isso só é possível porque, lá na Aula 01, `buildApp()` foi separado de `app.listen()`.
+O `STATUS_CODES` do `node:http` é a tabela oficial e **completa** do protocolo. Ela já
+contém os 60 e poucos códigos que existem, do 100 ao 511. Escrevemos a linha uma vez e ela
+funciona para todos, inclusive para códigos que ninguém deste projeto vai usar.
 
-Se a montagem da aplicação e a abertura da porta estivessem no mesmo lugar, **não haveria como
-testar a rota sem subir um servidor**. A aula de hoje seria muito mais difícil, ou
-simplesmente não existiria.
+**A lição:** quando você usa a solução que a plataforma já traz, ganha os casos que nem
+pensou em cobrir. Se tivéssemos escrito a nossa tabela à mão, ela teria os 4 ou 5 códigos que
+lembramos no dia — e o 403 seria um bug esperando alguém precisar dele.
 
-Guarde essa relação de causa e efeito: uma decisão de arquitetura, cujo benefício não era
-óbvio quando foi tomada, abriu uma porta quatro aulas depois. É assim que arquitetura boa se
-paga.
+> Experimente um código inventado, como `499`. O campo `error` vira `"Error"`, por causa do
+> `?? 'Error'`. É a rede de segurança da linha, e ela existe justamente porque `STATUS_CODES`
+> cobre o padrão, e não a criatividade de quem chama.
+
+---
+
+## 4. Investigue o 2º caso
+
+A requisição, no `erros.http`:
+
+```http
+### TEMPORÁRIO — exercício 4: JSON quebrado
+POST {{host}}/health
+Content-Type: application/json
+
+{ "isto": "não fecha"
+```
+
+**Resposta obtida:**
+
+```json
+{
+  "statusCode": 404,
+  "error": "Not Found",
+  "message": "Endereço não encontrado: POST /health"
+}
+```
+
+**Surpresa?** Era para ser. E a explicação é a parte que vale do exercício:
+
+**O Fastify decide a rota ANTES de interpretar o corpo.** A rota `/health` só existe para
+`GET`. Um `POST /health` não é rota nenhuma, então o corpo nem chega a ser olhado — o
+`notFoundHandler` responde antes.
+
+Para ver o caso que o exercício pedia, é preciso uma rota que aceite `POST`:
+
+```typescript
+// ⚠️ TEMPORÁRIA — apagar depois do exercício.
+app.post('/eco', async (request) => request.body)
+```
+
+Agora, com `POST /eco` e o mesmo corpo quebrado:
+
+```json
+{
+  "statusCode": 400,
+  "error": "Bad Request",
+  "message": "Body is not valid JSON but content-type is set to 'application/json'"
+}
+```
+
+**A mensagem saiu inteira**, e caiu no **2º caso** —
+`error.statusCode !== undefined && error.statusCode < 500`.
+
+**Justificativa:** quem lançou esse erro foi o próprio Fastify, ao tentar interpretar o corpo
+da requisição antes de entregá-la à rota. Ele marcou o erro com `statusCode: 400`, que na
+especificação do HTTP significa literalmente _"o problema está do seu lado"_.
+
+E leia o que a mensagem diz: ela fala **exclusivamente sobre o que o cliente acabou de
+enviar** — o corpo dele e o cabeçalho dele. Não revela nome de tabela, caminho de arquivo nem
+versão de biblioteca. Devolvê-la é seguro, e é útil: é ela que permite a quem integrou o
+sistema descobrir sozinho que esqueceu uma chave.
+
+**O detalhe que vale guardar:** este caso é a razão de o `errorHandler` ter três ramos, e não
+dois. Com apenas "é nosso / não é nosso", toda mensagem do Fastify viraria um 500 genérico, e
+quem consome a API perderia a única informação que realmente o ajudaria a se corrigir.
+
+---
+
+## 5. Pergunta para responder por escrito
+
+**Por que o handler global foi registrado antes das rotas?**
+
+Por causa da ordem em que o Fastify monta as coisas. O `setErrorHandler` vale para o escopo
+em que foi registrado e para tudo o que é registrado **depois** dele. Colocando-o no topo do
+`buildApp()`, ele passa a valer para o `healthRoutes` e para todo módulo que vier no futuro.
+
+Se ele fosse registrado depois das rotas, o comportamento passaria a depender da posição da
+linha em um arquivo — e "funciona se você colocar na ordem certa" é o tipo de regra que
+ninguém lembra na segunda vez.
+
+**E se alguém criasse um módulo novo e esquecesse de tratar erros dentro dele?**
+
+**Nada de ruim aconteceria.** É exatamente esse o ponto.
+
+O módulo novo é registrado através do `buildApp()`, que é o único caminho por onde uma rota
+entra nesta API. E o `buildApp()` já ligou o handler antes. A rota nasce protegida sem que
+quem a escreveu precise saber que o handler existe.
+
+Compare com o outro desenho possível — um `try/catch` dentro de cada rota:
+
+|                           | Centralizado (o nosso) | Espalhado (`try/catch` por rota) |
+| :------------------------ | :--------------------- | :------------------------------- |
+| Rota nova está protegida? | Sempre                 | Só se a pessoa lembrar           |
+| Mudar o formato do erro   | Um arquivo             | Todos os arquivos                |
+| Uma rota esquecida        | Impossível             | Vaza, e ninguém percebe          |
+| Código de tratamento      | 1 lugar                | Repetido em cada rota            |
+
+A diferença não é de estilo, é de **garantia**. Um sistema espalhado depende de disciplina
+humana, e disciplina humana falha exatamente no dia de pressa. Um sistema centralizado
+depende da estrutura, que não tem dia ruim.
+
+A lição vale muito além do tratamento de erro: **quando a proteção depende de alguém
+lembrar, ela já falhou** — só ainda não descobrimos quando.
+
+---
+
+> **Antes de fechar:** apague todas as rotas temporárias que você criou nestes cinco
+> exercícios, e os blocos `### TEMPORÁRIO` do `erros.http`. Rode `git diff` e confira que
+> sobrou apenas o que a aula mandou escrever. Deixar andaime de pé é o defeito mais fácil de
+> cometer e o mais chato de descobrir seis meses depois.

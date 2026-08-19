@@ -22,7 +22,7 @@ src/server.ts
 
 **Por quê:** no `eslint.config.js`, a regra `no-console` está configurada como `'error'`. O
 ESLint termina com código de saída 1, e o `&&` do script `check` interrompe a sequência ali
-mesmo — a verificação de formatação, os testes e o build **nem chegaram a rodar**.
+mesmo — a verificação de formatação e o build **nem chegaram a rodar**.
 
 **A distinção que importa:** `error` é "isto não pode entrar no projeto". `warning` é "olhe
 para isto, provavelmente está errado". Usar tudo como erro faz o time desligar as

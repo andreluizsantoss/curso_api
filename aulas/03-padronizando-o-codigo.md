@@ -388,8 +388,10 @@ export default defineConfig([
 > - `'warn'` mostra um aviso amarelo, mas o comando termina com sucesso.
 > - `'error'` mostra um erro vermelho e o comando **falha**.
 >
-> Isso vai importar de verdade na Aula 06, quando o GitHub passar a rodar essa verificação
-> sozinho a cada envio de código: um `error` vai **barrar** o código; um `warn`, não.
+> Isso importa toda vez que você roda o `npm run check`, que vamos criar daqui a pouco: ele
+> encadeia as verificações com `&&`, e um `error` **interrompe a sequência ali mesmo** — o
+> build nem chega a rodar. Um `warn` deixa passar. É a diferença entre "isto não entra no
+> projeto" e "olhe para isto quando puder".
 
 ---
 
@@ -786,9 +788,9 @@ Confira no navegador que o `eslint.config.js` e a pasta `.vscode` aparecem lá.
 | Abrir o `README.md`            | A tabela de comandos tem **oito** linhas         |
 
 > [!CAUTION]
-> Se algum falhar, resolva antes de seguir. A Aula 06 vai fazer o GitHub rodar exatamente
-> esses comandos a cada envio de código — se estiverem quebrados aqui, vão barrar o seu
-> trabalho lá.
+> Se algum falhar, resolva antes de seguir. Estes são os comandos que você vai rodar antes de
+> cada commit, pelo resto do curso — e projeto que segue adiante quebrado só acumula
+> problema: a cada aula nova, descobrir qual foi a causa fica mais caro.
 
 ---
 
@@ -864,15 +866,14 @@ O que ficou pronto:
 
 **E agora?**
 
-Repare em uma coisa: durante toda esta aula, para saber se a API ainda funcionava, você
-precisou subir o servidor e abrir o navegador **na mão**. Toda vez.
+Repare em uma coisa: o projeto agora tem uma configuração escrita, e o computador cobra ela
+de você. Isso é uma mudança de natureza — antes o padrão morava na cabeça de quem escrevia.
 
-Imagine isso com 30 rotas. Ninguém vai testar 30 rotas manualmente a cada alteração — e é aí
-que os bugs passam.
+Falta a configuração do **ambiente**: a porta, o endereço, o modo de execução. Hoje esses
+valores estão espalhados pelo código, e é assim que nasce o bug que só aparece na máquina de
+outra pessoa.
 
-Na **Aula 04** vamos primeiro tirar a configuração de dentro do código, com validação de
-variáveis de ambiente. E na **Aula 05** vamos ensinar o computador a testar a API sozinho —
-onde aquela separação entre `app.ts` e `server.ts`, que fizemos lá na Aula 01, finalmente vai
-mostrar para que serve.
+Na **Aula 04** vamos tirar essa configuração de dentro do código e fazer a API recusar subir
+quando ela estiver errada — em vez de subir torta e falhar mais tarde.
 
 Até a próxima! 🚀

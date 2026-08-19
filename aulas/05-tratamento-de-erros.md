@@ -1,13 +1,13 @@
-# 🛡️ Aula 06: Tratamento de Erros — O que a API Nunca Deve Contar
+# 🛡️ Aula 05: Tratamento de Erros — O que a API Nunca Deve Contar
 
-Bem-vindos à **Aula 06**! 🎉
+Bem-vindos à **Aula 05**! 🎉
 
 Até aqui, todas as aulas cuidaram do caminho em que tudo dá certo. Hoje é o contrário:
 vamos cuidar do caminho em que tudo dá errado.
 
-E vamos fazer isso na ordem inversa da que estamos acostumados. Pela primeira vez, o
-**teste vem antes do código**. Isso só é possível porque a Aula 05 existiu — sem testes, não
-haveria como escrever a exigência antes da solução.
+E vamos fazer isso na ordem inversa da que estamos acostumados. Pela primeira vez, você vai
+**ver o problema com os próprios olhos antes de existir a solução**. Não vamos acreditar em
+mim: vamos provocar a falha, olhar o que saiu pela internet, e só então consertar.
 
 ---
 
@@ -16,16 +16,18 @@ haveria como escrever a exigência antes da solução.
 - Explicar por que uma mensagem de erro pode ser um problema de **segurança**.
 - Separar erro **esperado** de erro **inesperado**, e justificar por que só um dos dois pode
   ser mostrado ao cliente.
-- Escrever um teste que falha **antes** de existir o código que o faz passar.
 - Registrar um tratamento de erro global no Fastify, que cobre toda rota criada dali em
   diante.
 - Definir um formato único de resposta de erro para a API inteira.
+- Guardar as requisições que provam cada caso em um arquivo `.http` versionado, para
+  reconferir quando quiser.
 - Publicar esse formato no `README.md`, como contrato de quem consome a API.
 
 ## 📋 Pré-requisitos
 
-- Aulas 01 a 06 concluídas.
+- Aulas 01 a 04 concluídas.
 - `npm run check` passando.
+- A extensão **REST Client**, instalada na Aula 01. Vamos usá-la de verdade hoje.
 - Nada para instalar nesta aula. Tudo o que vamos usar já está no projeto.
 
 ---
@@ -56,7 +58,7 @@ app.get('/vazamento', async () => {
 
 Essa mensagem não foi inventada por capricho: é o formato exato do que um banco de dados
 MySQL devolve quando uma consulta erra o nome de uma coluna. Guarde isso — é o tipo de erro
-que vai acontecer de verdade no dia a dia, a partir da aula do banco de dados.
+que vai acontecer de verdade no dia a dia, assim que a API passar a falar com um banco.
 
 Agora suba a API:
 
@@ -157,103 +159,120 @@ em produção é justamente o que ninguém vê no dia a dia. Ele passa meses sem
 até falhar na hora errada.
 
 Um único comportamento, igual em todo lugar, é um comportamento que está sempre sendo
-testado.
+exercitado.
 
 ---
 
-## 🧪 Capítulo 3: O teste antes do código
+## 🧪 Capítulo 3: A prova antes do código
 
-Aqui a aula muda de ritmo. Em vez de escrever a solução e depois testá-la, vamos escrever a
+Aqui a aula muda de ritmo. Em vez de escrever a solução e depois conferir, vamos escrever a
 **exigência** primeiro, ver o projeto reprovar, e só então resolver.
 
-Isso tem um nome no mercado: **TDD** (_Test Driven Development_, ou desenvolvimento guiado
-por testes). O ciclo é sempre o mesmo:
+Isso vale para qualquer coisa que você for construir, e o ciclo é sempre o mesmo:
 
 ```mermaid
 flowchart LR
-    A["🔴 Escreve o teste<br/>e vê ele falhar"] --> B["🟢 Escreve o código<br/>até ele passar"]
-    B --> C["🔵 Melhora o código<br/>com o teste de guarda"]
+    A["🔴 Escreve a exigência<br/>e vê o projeto reprovar"] --> B["🟢 Escreve o código<br/>até ele atender"]
+    B --> C["🔵 Melhora o código<br/>reconferindo a cada passo"]
     C --> A
 ```
 
-O passo que parece bobo — **ver o teste falhar** — é o mais importante dos três. Um teste
-que nunca falhou não provou nada: pode estar passando por engano, testando a coisa errada,
-ou nem estar sendo executado.
+O passo que parece bobo — **ver a reprovação** — é o mais importante dos três. Uma exigência
+que nunca reprovou não provou nada: pode estar conferindo a coisa errada, ou nem estar sendo
+conferida.
 
-### Passo 1: Criando o arquivo de teste
+### Passo 1: Escrevendo a exigência em um arquivo `.http`
 
-Crie a pasta `src/shared/errors/` e, dentro dela, o arquivo `errors.spec.ts` com este
-conteúdo **inicial** (ele vai crescer no Capítulo 6):
+Na Aula 01 você criou `requisicoes/health.http` e instalou a extensão **REST Client**. Aquilo
+não foi um enfeite: é assim que se guarda uma requisição de teste dentro do repositório, para
+qualquer pessoa do time repetir exatamente a mesma chamada.
 
-```typescript
-import { describe, expect, it } from 'vitest'
-import { buildApp } from '../../app.ts'
+Vamos usar de novo. Crie o arquivo `requisicoes/erros.http`:
 
-const MENSAGEM_INTERNA = "Unknown column 'cpf' in field list: SELECT * FROM cidadaos"
+```http
+# Requisições que provam o tratamento de erros
+#
+# Cada bloco abaixo é uma requisição que você dispara clicando em
+# "Send Request", logo acima dela, com a API rodando (`npm run dev`).
+#
+# Este arquivo é versionado de propósito. Ele é a memória do time sobre COMO
+# se confere que o tratamento de erros continua funcionando — quem chegar
+# daqui a um ano não precisa adivinhar quais endereços visitar.
 
-describe('Handler global de erros', () => {
-  it('NÃO deixa vazar o detalhe interno de um erro inesperado', async () => {
-    const app = buildApp({ logger: false })
+@host = http://localhost:3333
 
-    app.get('/teste/falha-inesperada', async () => {
-      throw new Error(MENSAGEM_INTERNA)
-    })
+### 1. Falha inesperada — a resposta NÃO pode conter "cidadaos" nem "SELECT"
+GET {{host}}/vazamento
 
-    const resposta = await app.inject({ method: 'GET', url: '/teste/falha-inesperada' })
+### 2. Endereço que não existe — precisa vir no formato de erro da API
+GET {{host}}/endereco-que-nao-existe
 
-    expect(resposta.body).not.toContain('cidadaos')
-    expect(resposta.body).not.toContain('SELECT')
+### 3. Método errado em rota que existe — também é "não encontrado"
+POST {{host}}/health
 
-    await app.close()
-  })
-})
+### 4. O caminho feliz — precisa continuar respondendo igual
+GET {{host}}/health
 ```
+
+**O que cada parte faz:**
+
+| Trecho             | Para que serve                                                                |
+| :----------------- | :---------------------------------------------------------------------------- |
+| `@host = ...`      | Uma variável. Trocar o endereço num lugar só troca em todas as requisições    |
+| `###`              | Separa uma requisição da outra. É o que faz aparecer o botão **Send Request** |
+| `{{host}}`         | Usa o valor da variável                                                       |
+| Comentário com `#` | Explica **o que se espera**, que é a parte que o arquivo sozinho não conta    |
+
+### Passo 2: Vendo o projeto reprovar
+
+Com a API no ar (`npm run dev`), abra `requisicoes/erros.http` no VS Code e clique em
+**Send Request** na requisição **1**.
+
+A resposta abre numa aba ao lado:
+
+```json
+{
+  "statusCode": 500,
+  "error": "Internal Server Error",
+  "message": "Unknown column 'cpf' in field list: SELECT * FROM cidadaos"
+}
+```
+
+Ali está `cidadaos`. Ali está `SELECT`. **A exigência número 1 reprovou.**
+
+Dispare também a **2**:
+
+```json
+{
+  "message": "Route GET:/endereco-que-nao-existe not found",
+  "error": "Not Found",
+  "statusCode": 404
+}
+```
+
+Repare que essa mensagem está em **inglês**, fala em "Route" e usa um formato que não é
+nosso — é o padrão do Fastify. Reprovou também.
+
+A exigência está certa. O código é que ainda não está. **Agora** podemos escrever a
+solução — e vamos saber com precisão quando ela ficou pronta.
 
 > [!TIP]
-> Repare onde a rota que falha foi criada: **dentro do teste**, na instância que o teste
-> montou. Ela não existe na aplicação.
->
-> Esse detalhe importa. Precisamos de uma rota que quebre para provar o nosso ponto, mas
-> seria um contrassenso deixar uma rota de mentira dentro da API só porque foi útil um dia.
-> O `buildApp()` devolve a instância do Fastify, então o teste pode acrescentar o que
-> precisar **naquela cópia**, sem tocar na aplicação de verdade.
-
-### Passo 2: Vendo o teste reprovar
-
-```bash
-npm run test
-```
-
-E aí está o ponto da aula, escrito pelo próprio Vitest:
-
-```
-FAIL  src/shared/errors/errors.spec.ts > Handler global de erros > NÃO deixa vazar o detalhe interno de um erro inesperado
-
-AssertionError: expected '{"statusCode":500,"error":"Internal Se…' not to contain 'cidadaos'
-```
-
-O teste está certo. O código é que ainda não está. **Agora** podemos escrever a solução —
-e vamos saber com precisão quando ela ficou pronta.
-
-### Passo 3: Apague a rota temporária
-
-Antes de seguir, volte ao `src/app.ts` e **apague** a rota `/vazamento` que criamos no
-Capítulo 1. Ela cumpriu o papel dela: mostrar o problema com os próprios olhos de vocês. O
-teste do Passo 1 assumiu esse trabalho de agora em diante, e faz melhor — ele roda sozinho, a
-cada envio, sem depender de ninguém abrir navegador.
+> Deixe as duas abas abertas, lado a lado: o `.http` de um lado e a resposta do outro. Ao
+> longo do capítulo seguinte você vai reenviar as mesmas requisições e ver a resposta mudar,
+> sem sair do editor.
 
 ---
 
 ## 🏗️ Capítulo 4: Construindo a solução
 
-### Passo 4: A classe `AppError`
+### Passo 3: A classe `AppError`
 
 Precisamos de um jeito de dizer, no código: _"esta mensagem é minha, pode sair"_.
 
 A forma mais direta é criar um **tipo de erro próprio**. Quando o handler receber um erro,
 basta perguntar se ele é desse tipo.
 
-Crie `src/shared/errors/app-error.ts`:
+Crie a pasta `src/shared/errors/` e, dentro dela, o arquivo `app-error.ts`:
 
 ```typescript
 /**
@@ -326,7 +345,7 @@ export class AppError extends Error {
 > perguntar "este erro é nosso?" com uma linha só — sem inventar convenções tipo "se tiver a
 > propriedade `ehNosso: true`", que qualquer biblioteca poderia imitar por acidente.
 
-### Passo 5: O handler global
+### Passo 4: O handler global
 
 Agora o arquivo que decide o que sai. Crie `src/shared/errors/error-handler.ts`:
 
@@ -474,12 +493,13 @@ export function notFoundHandler(request: FastifyRequest, reply: FastifyReply): F
 > ela discordar do padrão. Sempre que a plataforma já resolveu um problema, use a solução
 > dela.
 
-### Passo 6: Ligando os handlers no `app.ts`
+### Passo 5: Ligando os handlers no `app.ts`
 
 Os dois arquivos existem, mas ninguém os usa ainda. É o `app.ts` que os coloca em serviço.
 
-Abra `src/app.ts` e deixe **exatamente** assim (lembrando de já ter apagado a rota
-`/vazamento` do Capítulo 1):
+Abra `src/app.ts` e deixe **exatamente** assim. Repare que a rota `/vazamento` do Capítulo 1
+**continua aqui** — vamos precisar dela mais um pouco, para provar que o handler funciona, e
+ela sai no Capítulo 6:
 
 ```typescript
 /**
@@ -492,8 +512,9 @@ Abra `src/app.ts` e deixe **exatamente** assim (lembrando de já ter apagado a r
  *   4. Registrar as rotas de cada módulo.
  *
  * Separamos a montagem do app (aqui) da inicialização do servidor (`server.ts`)
- * para facilitar os testes automatizados: nos testes importamos apenas o app,
- * sem precisar ocupar uma porta de rede.
+ * porque são duas responsabilidades diferentes: uma decide quais rotas e
+ * plugins a aplicação tem, a outra decide em qual endereço ela atende. Quem
+ * monta a aplicação não precisa saber nada sobre rede.
  */
 
 import Fastify from 'fastify'
@@ -502,31 +523,15 @@ import { healthRoutes } from './modules/health/health.routes.ts'
 import { errorHandler, notFoundHandler } from './shared/errors/error-handler.ts'
 
 /**
- * Opções de montagem da aplicação.
- */
-export interface BuildAppOptions {
-  /**
-   * Liga ou desliga o registro de eventos (logger).
-   *
-   * O padrão é ligado. Nos testes automatizados passamos `false`: sem isso, cada
-   * requisição simulada imprimiria várias linhas de log e o resultado dos testes
-   * ficaria impossível de ler.
-   */
-  logger?: boolean
-}
-
-/**
  * Fábrica da aplicação Fastify.
  *
- * @param options Ajustes opcionais de montagem.
- * @returns Instância do Fastify já configurada, pronta para receber requisições
- *          ou para ser usada em testes.
+ * @returns Instância do Fastify já configurada, pronta para receber requisições.
  */
-export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
+export function buildApp(): FastifyInstance {
   const app = Fastify({
     // O Fastify já vem com o Pino, um dos loggers mais rápidos do Node.
     // Deixá-lo ligado nos dá o registro de cada requisição sem escrever uma linha.
-    logger: options.logger ?? true,
+    logger: true,
   })
 
   // Registramos o tratamento de erros ANTES das rotas, de propósito: assim toda
@@ -539,11 +544,16 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   // cada módulo isolado: um erro no registro de um não derruba os outros.
   app.register(healthRoutes)
 
+  // ⚠️ TEMPORÁRIA — sai no Capítulo 6 desta aula.
+  app.get('/vazamento', async () => {
+    throw new Error("Unknown column 'cpf' in field list: SELECT * FROM cidadaos")
+  })
+
   return app
 }
 ```
 
-**Três linhas novas, e é isso.** Vale medir o que elas compraram:
+**Duas linhas novas, e é isso.** Vale medir o que elas compraram:
 
 - `app.setErrorHandler(errorHandler)` — o Fastify aceita **um** handler de erro por
   instância. A partir daqui, toda exceção lançada em qualquer rota passa por ele.
@@ -557,16 +567,53 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 > rota basta para vazar. Centralizado, a rota nasce protegida porque o `buildApp()` é o
 > caminho por onde toda rota passa.
 
-### Passo 7: Vendo o teste passar
+### Passo 6: Vendo a exigência ser atendida
+
+Pare a API (`Ctrl+C`) e suba de novo:
 
 ```bash
-npm run test
+npm run dev
 ```
 
-O teste que reprovava no Passo 2 agora passa. Nada mais mudou — o mesmo teste, o mesmo
-comando. O que mudou foi o código.
+Volte ao `requisicoes/erros.http` e dispare a requisição **1** outra vez. Agora:
 
-Esse é o ciclo do TDD fechado pela primeira vez. 🔴 → 🟢
+```json
+{
+  "statusCode": 500,
+  "error": "Internal Server Error",
+  "message": "Erro interno do servidor. A equipe já foi avisada."
+}
+```
+
+Nem `cidadaos`, nem `SELECT`, nem sinal do MySQL. **A exigência número 1 passou.**
+
+Agora olhe o **terminal** onde o `npm run dev` está rodando. O detalhe não sumiu — ele está
+lá inteiro, com stack trace, na linha que o handler registrou:
+
+```
+ERROR: Erro não tratado durante a requisição
+    err: {
+      "type": "Error",
+      "message": "Unknown column 'cpf' in field list: SELECT * FROM cidadaos",
+      "stack": ...
+    }
+```
+
+**Esta é a aula inteira em uma tela.** A mesma informação, em dois lugares diferentes: frase
+genérica para quem está fora, detalhe completo para quem opera o sistema. 🔴 → 🟢
+
+Dispare também a **2** e a **3**. As duas agora respondem no formato da API:
+
+```json
+{
+  "statusCode": 404,
+  "error": "Not Found",
+  "message": "Endereço não encontrado: GET /endereco-que-nao-existe"
+}
+```
+
+E a **4**, o caminho feliz, precisa responder **exatamente como antes**. Tratamento de erro
+que muda o caminho feliz é tratamento de erro quebrado.
 
 ---
 
@@ -592,167 +639,121 @@ produção, com o sistema já integrado.
 > de digitação. A régua continua a mesma — o que não pode sair é o que está do lado de
 > dentro.
 
+### A requisição 3 merece um parágrafo
+
+Você disparou `POST /health`, e a rota `/health` **existe**. Mesmo assim, a resposta foi 404.
+
+Isso não é bug. Para o Fastify, uma rota é a dupla **método + caminho**. `GET /health` existe;
+`POST /health` não existe, do mesmo jeito que `/xyz` não existe. Um caminho certo com o método
+errado é tão inexistente quanto um caminho inventado — e é bom que seja assim, porque a
+alternativa seria a API aceitar `POST` em rota que só sabe responder `GET`.
+
 ---
 
-## 🧪 Capítulo 6: Completando os testes
+## 🧹 Capítulo 6: Desmontando o andaime
 
-O teste do Capítulo 3 provou o principal. Falta cobrir o resto do comportamento, para que
-qualquer alteração futura que quebre alguma dessas regras apareça no `npm run check`.
+A rota `/vazamento` cumpriu o papel dela: mostrar o problema com os seus próprios olhos, e
+depois provar que a solução funciona. Agora ela precisa sair.
 
-Abra `src/shared/errors/errors.spec.ts` e deixe **exatamente** assim:
+**Por que não deixar?** Porque ela é uma rota de mentira dentro de uma API de verdade. Ela
+aparece na lista de rotas, alguém a encontra daqui a seis meses e não sabe se pode apagar, e
+no dia em que a API for para um servidor ela vai junto — um endereço público que existe só
+para quebrar.
+
+**Andaime é para ser montado e desmontado.** Deixar andaime de pé é como deixar a escada
+encostada na janela depois que a obra acabou.
+
+### Passo 7: `src/app.ts`, versão final da aula
+
+Apague o bloco da rota temporária. Este é o arquivo completo, como ele fica ao final da
+Aula 05:
 
 ```typescript
 /**
- * Testes do tratamento centralizado de erros
+ * App — Montagem da instância do Fastify
  *
- * O teste mais importante deste arquivo é o de vazamento: ele registra uma rota
- * que falha com uma mensagem parecida com a que um banco de dados produziria, e
- * verifica que **nada** daquele texto aparece na resposta.
+ * Este arquivo é responsável por:
+ *   1. Criar a instância do Fastify com suas configurações.
+ *   2. Registrar o tratamento centralizado de erros.
+ *   3. Registrar plugins globais.
+ *   4. Registrar as rotas de cada módulo.
  *
- * Repare que a rota que falha é criada aqui dentro, na instância do teste. Ela
- * não existe na aplicação — a API não ganha nenhuma rota de mentira só para ser
- * testada.
+ * Separamos a montagem do app (aqui) da inicialização do servidor (`server.ts`)
+ * porque são duas responsabilidades diferentes: uma decide quais rotas e
+ * plugins a aplicação tem, a outra decide em qual endereço ela atende. Quem
+ * monta a aplicação não precisa saber nada sobre rede.
  */
 
-import { describe, expect, it } from 'vitest'
-import { buildApp } from '../../app.ts'
-import { AppError } from './app-error.ts'
+import Fastify from 'fastify'
+import type { FastifyInstance } from 'fastify'
+import { healthRoutes } from './modules/health/health.routes.ts'
+import { errorHandler, notFoundHandler } from './shared/errors/error-handler.ts'
 
 /**
- * Texto que imita o que um erro de banco de dados devolveria.
+ * Fábrica da aplicação Fastify.
  *
- * É exatamente este tipo de mensagem que não pode chegar ao cliente: ela revela
- * o nome da tabela, o nome da coluna e o formato da consulta.
+ * @returns Instância do Fastify já configurada, pronta para receber requisições.
  */
-const MENSAGEM_INTERNA = "Unknown column 'cpf' in field list: SELECT * FROM cidadaos"
-
-/**
- * Monta a aplicação com duas rotas extras, usadas apenas nestes testes.
- */
-function montarAppDeTeste() {
-  const app = buildApp({ logger: false })
-
-  // Falha inesperada: alguém lançou um erro comum, vindo de fora do nosso código.
-  app.get('/teste/falha-inesperada', async () => {
-    throw new Error(MENSAGEM_INTERNA)
+export function buildApp(): FastifyInstance {
+  const app = Fastify({
+    // O Fastify já vem com o Pino, um dos loggers mais rápidos do Node.
+    // Deixá-lo ligado nos dá o registro de cada requisição sem escrever uma linha.
+    logger: true,
   })
 
-  // Falha esperada: fomos nós que escrevemos a mensagem e escolhemos o código.
-  app.get('/teste/falha-esperada', async () => {
-    throw new AppError('Protocolo não encontrado', 404)
-  })
+  // Registramos o tratamento de erros ANTES das rotas, de propósito: assim toda
+  // rota registrada daqui para baixo já nasce coberta, e ninguém precisa lembrar
+  // de tratar erro em cada rota nova.
+  app.setErrorHandler(errorHandler)
+  app.setNotFoundHandler(notFoundHandler)
+
+  // No Fastify, cada conjunto de rotas é registrado como um plugin. Isso mantém
+  // cada módulo isolado: um erro no registro de um não derruba os outros.
+  app.register(healthRoutes)
 
   return app
 }
-
-describe('AppError', () => {
-  it('guarda a mensagem e o código de status recebidos', () => {
-    const erro = new AppError('Protocolo não encontrado', 404)
-
-    expect(erro.message).toBe('Protocolo não encontrado')
-    expect(erro.statusCode).toBe(404)
-  })
-
-  it('usa 400 quando o código não é informado', () => {
-    // 400 é o padrão porque o caso mais comum é a requisição ter chegado com
-    // algo errado — e é o lado seguro se alguém esquecer de escolher.
-    expect(new AppError('CPF inválido').statusCode).toBe(400)
-  })
-
-  it('se identifica como AppError no nome', () => {
-    // Sem isso, o log mostraria apenas "Error" e não haveria como separar um
-    // erro nosso de um erro vindo de biblioteca.
-    expect(new AppError('qualquer coisa').name).toBe('AppError')
-  })
-})
-
-describe('Handler global de erros', () => {
-  it('NÃO deixa vazar o detalhe interno de um erro inesperado', async () => {
-    const app = montarAppDeTeste()
-
-    const resposta = await app.inject({ method: 'GET', url: '/teste/falha-inesperada' })
-
-    // Este é o teste mais importante do arquivo. Verificamos o corpo bruto, e
-    // não campo por campo: assim o teste pega o vazamento mesmo que alguém, no
-    // futuro, acrescente um campo novo à resposta de erro.
-    expect(resposta.body).not.toContain('cidadaos')
-    expect(resposta.body).not.toContain('SELECT')
-    expect(resposta.body).not.toContain(MENSAGEM_INTERNA)
-
-    await app.close()
-  })
-
-  it('responde 500 com mensagem genérica quando o erro é inesperado', async () => {
-    const app = montarAppDeTeste()
-
-    const resposta = await app.inject({ method: 'GET', url: '/teste/falha-inesperada' })
-
-    expect(resposta.statusCode).toBe(500)
-    expect(resposta.json()).toEqual({
-      statusCode: 500,
-      error: 'Internal Server Error',
-      message: 'Erro interno do servidor. A equipe já foi avisada.',
-    })
-
-    await app.close()
-  })
-
-  it('mostra a mensagem inteira quando o erro é um AppError', async () => {
-    const app = montarAppDeTeste()
-
-    const resposta = await app.inject({ method: 'GET', url: '/teste/falha-esperada' })
-
-    expect(resposta.statusCode).toBe(404)
-    expect(resposta.json()).toEqual({
-      statusCode: 404,
-      error: 'Not Found',
-      message: 'Protocolo não encontrado',
-    })
-
-    await app.close()
-  })
-})
-
-describe('Handler de endereço não encontrado', () => {
-  it('responde 404 no mesmo formato dos demais erros', async () => {
-    const app = buildApp({ logger: false })
-
-    const resposta = await app.inject({ method: 'GET', url: '/endereco-que-nao-existe' })
-
-    expect(resposta.statusCode).toBe(404)
-    expect(resposta.json()).toEqual({
-      statusCode: 404,
-      error: 'Not Found',
-      message: 'Endereço não encontrado: GET /endereco-que-nao-existe',
-    })
-
-    await app.close()
-  })
-
-  it('responde 404 também para um método diferente de GET', async () => {
-    const app = buildApp({ logger: false })
-
-    const resposta = await app.inject({ method: 'POST', url: '/health' })
-
-    // A rota `/health` existe, mas apenas para GET. Para o Fastify, caminho certo
-    // com método errado também é "não encontrado".
-    expect(resposta.statusCode).toBe(404)
-    expect(resposta.json().message).toBe('Endereço não encontrado: POST /health')
-
-    await app.close()
-  })
-})
 ```
 
-> [!TIP]
-> Repare no teste de vazamento: ele verifica `resposta.body`, o texto bruto, e não campo por
-> campo do JSON.
+### Passo 8: `requisicoes/erros.http`, versão final da aula
+
+A requisição 1 apontava para uma rota que não existe mais. Ela precisa acompanhar. Deixe o
+arquivo **exatamente** assim:
+
+```http
+# Requisições que provam o tratamento de erros
+#
+# Cada bloco abaixo é uma requisição que você dispara clicando em
+# "Send Request", logo acima dela, com a API rodando (`npm run dev`).
+#
+# Este arquivo é versionado de propósito. Ele é a memória do time sobre COMO
+# se confere que o tratamento de erros continua funcionando — quem chegar
+# daqui a um ano não precisa adivinhar quais endereços visitar.
+
+@host = http://localhost:3333
+
+### 1. Endereço que não existe — precisa vir no formato de erro da API
+# Esperado: 404, e a mensagem em português começando por "Endereço não encontrado"
+GET {{host}}/endereco-que-nao-existe
+
+### 2. Método errado em rota que existe — também é "não encontrado"
+# Esperado: 404. Para o Fastify, rota é método + caminho.
+POST {{host}}/health
+
+### 3. O caminho feliz — precisa continuar respondendo igual
+# Esperado: 200, com status, uptime e ambiente.
+GET {{host}}/health
+```
+
+> [!NOTE]
+> **E a prova do vazamento, some?**
 >
-> Isso é de propósito. Se alguém, daqui a seis meses, acrescentar um campo novo à resposta de
-> erro e vazar o detalhe por ele, um teste que olha campo por campo passaria tranquilamente.
-> O que olha o corpo inteiro pega.
+> A requisição some, porque a rota que ela chamava era andaime. O que **não** some é a régua:
+> nenhuma resposta desta API pode conter nome de tabela, nome de coluna ou trecho de consulta.
 >
-> **Ao testar segurança, teste a ausência da informação — não a presença do formato.**
+> Guarde essa frase. Quando a API passar a falar com um banco de dados de verdade, ela vira a
+> primeira coisa a conferir a cada rota nova — e aí a prova volta, sobre erro de verdade em
+> vez de erro encomendado.
 
 ---
 
@@ -767,7 +768,7 @@ Contrato que não está escrito não é contrato: é hábito. E hábito se perde
 de equipe.
 
 Acrescente a seção `## Formato de erro` ao seu `README.md`, depois de `## Rotas`. Este é o
-arquivo completo, como ele fica ao final da Aula 06:
+arquivo completo, como ele fica ao final da Aula 05:
 
 ````markdown
 # API do Curso
@@ -795,35 +796,36 @@ Copy-Item .env.example .env
 cp .env.example .env
 ```
 
-| Variável   | O que controla                                | Padrão        |
-| :--------- | :-------------------------------------------- | :------------ |
+| Variável   | O que controla                                  | Padrão        |
+| :--------- | :---------------------------------------------- | :------------ |
 | `NODE_ENV` | Ambiente: `development`, `test` ou `production` | `development` |
-| `PORT`     | Porta em que a API escuta                     | `3333`        |
-| `HOST`     | Endereço de rede que a API aceita             | `0.0.0.0`     |
+| `PORT`     | Porta em que a API escuta                       | `3333`        |
+| `HOST`     | Endereço de rede que a API aceita               | `0.0.0.0`     |
 
 O `.env` **não** é versionado: ele guarda os valores reais de cada máquina, incluindo os
 segredos. O `.env.example` é versionado e serve de modelo — ele nunca contém senha de verdade.
 
 ## Comandos
 
-| Comando                | O que faz                                          |
-| :--------------------- | :------------------------------------------------- |
-| `npm run dev`          | Sobe a API recarregando a cada alteração salva     |
-| `npm run build`        | Compila o TypeScript para a pasta `dist`           |
-| `npm start`            | Executa a versão compilada, como roda em produção  |
-| `npm test`             | Roda todos os testes uma vez                       |
-| `npm run test:watch`   | Deixa os testes rodando a cada arquivo salvo       |
-| `npm run lint`         | Procura problemas de lógica e qualidade no código  |
-| `npm run lint:fix`     | Corrige sozinho o que for corrigível               |
-| `npm run format`       | Formata todos os arquivos com o Prettier           |
-| `npm run format:check` | Confere a formatação sem alterar nada              |
-| `npm run check`        | Roda lint, formatação, testes e build em sequência |
+| Comando                | O que faz                                         |
+| :--------------------- | :------------------------------------------------ |
+| `npm run dev`          | Sobe a API recarregando a cada alteração salva    |
+| `npm run build`        | Compila o TypeScript para a pasta `dist`          |
+| `npm start`            | Executa a versão compilada, como roda em produção |
+| `npm run lint`         | Procura problemas de lógica e qualidade no código |
+| `npm run lint:fix`     | Corrige sozinho o que for corrigível              |
+| `npm run format`       | Formata todos os arquivos com o Prettier          |
+| `npm run format:check` | Confere a formatação sem alterar nada             |
+| `npm run check`        | Roda lint, formatação e build em sequência        |
 
 ## Rotas
 
 | Método | Rota      | O que devolve                              |
 | :----- | :-------- | :----------------------------------------- |
 | `GET`  | `/health` | O estado da API: status, uptime e ambiente |
+
+As requisições de exemplo de cada rota estão em `requisicoes/`, prontas para disparar pelo
+VS Code com a extensão REST Client.
 
 ## Formato de erro
 
@@ -837,11 +839,11 @@ Toda falha responde com o mesmo corpo, qualquer que seja a rota ou o código HTT
 }
 ```
 
-| Campo        | O que é                                              |
-| :----------- | :--------------------------------------------------- |
-| `statusCode` | O código HTTP repetido no corpo                      |
-| `error`      | O nome oficial do código HTTP, em inglês             |
-| `message`    | A explicação em português, escrita para uma pessoa   |
+| Campo        | O que é                                            |
+| :----------- | :------------------------------------------------- |
+| `statusCode` | O código HTTP repetido no corpo                    |
+| `error`      | O nome oficial do código HTTP, em inglês           |
+| `message`    | A explicação em português, escrita para uma pessoa |
 
 Erro inesperado (código 500) sempre responde com uma mensagem genérica. O detalhe técnico vai
 para o log estruturado do servidor, nunca para o cliente.
@@ -851,8 +853,8 @@ para o log estruturado do servidor, nunca para o cliente.
 
 ## 💾 Fechando o ciclo: mande para o GitHub
 
-Hoje você criou `src/shared/errors/` com três arquivos, alterou o `app.ts` e documentou o
-contrato de erro no README. Feche o ciclo da Aula 02:
+Hoje você criou `src/shared/errors/` com dois arquivos, criou `requisicoes/erros.http`,
+alterou o `app.ts` e documentou o contrato de erro no README. Feche o ciclo da Aula 02:
 
 ```bash
 git add .
@@ -860,27 +862,14 @@ git commit -m "feat: adiciona tratamento centralizado de erros"
 git push
 ```
 
-Confira no GitHub, no navegador, que a pasta `src/shared/errors/` chegou lá com os três
+Confira no GitHub, no navegador, que a pasta `src/shared/errors/` chegou lá com os dois
 arquivos.
 
 ---
 
 ## ✅ Como saber que deu certo
 
-### 1. Todos os testes passam
-
-```bash
-npm run test
-```
-
-Você deve ver **27 testes** passando (eram 19 na Aula 05, e ganhamos 8 nesta):
-
-```
- Test Files  3 passed (3)
-      Tests  27 passed (27)
-```
-
-### 2. A verificação completa passa
+### 1. A verificação completa passa
 
 ```bash
 npm run check
@@ -889,34 +878,36 @@ npm run check
 Precisa terminar sem nenhum erro. É o comando que resume, em uma resposta só, se o projeto
 está em ordem.
 
-### 3. O 404 no navegador
+### 2. As três requisições do `.http` respondem o esperado
 
-Suba a API e acesse um endereço que não existe:
+Com `npm run dev` rodando, abra `requisicoes/erros.http` e dispare as três, em ordem:
 
-```bash
-npm run dev
-```
+| #   | Requisição                     | Código esperado | O que precisa vir na `message`          |
+| --- | :----------------------------- | :-------------: | :-------------------------------------- |
+| 1   | `GET /endereco-que-nao-existe` |     **404**     | `Endereço não encontrado: GET /...`     |
+| 2   | `POST /health`                 |     **404**     | `Endereço não encontrado: POST /health` |
+| 3   | `GET /health`                  |     **200**     | _(não é erro — traz status e uptime)_   |
 
-`http://localhost:3333/nao-existe` deve devolver:
+### 3. Nenhuma resposta está em inglês
 
-```json
-{
-  "statusCode": 404,
-  "error": "Not Found",
-  "message": "Endereço não encontrado: GET /nao-existe"
-}
-```
+Antes desta aula, o 404 vinha com `"Route GET:/xyz not found"`. Se você ainda vê essa frase, o
+`setNotFoundHandler` não foi registrado.
 
 ### 4. A `/health` continua igual
 
-`http://localhost:3333/health` precisa responder exatamente como antes. Tratamento de erro
-que muda o caminho feliz é tratamento de erro quebrado.
+`http://localhost:3333/health` precisa responder exatamente como antes da aula. Tratamento de
+erro que muda o caminho feliz é tratamento de erro quebrado.
 
-### 5. O README documenta o contrato
+### 5. A rota `/vazamento` não existe mais
+
+`http://localhost:3333/vazamento` precisa devolver **404**, no formato da API. Se ela ainda
+devolver 500, o Passo 7 não foi feito — e você está prestes a mandar um andaime para o GitHub.
+
+### 6. O README documenta o contrato
 
 Abra o seu `README.md`: ele precisa ter a seção `## Formato de erro`, e o JSON de exemplo
-dela precisa ser igual ao que você acabou de ver no navegador. Se os dois divergirem, quem
-manda é o navegador — corrija o README.
+dela precisa ser igual ao que você acabou de ver na aba de resposta. Se os dois divergirem,
+quem manda é a resposta de verdade — corrija o README.
 
 ---
 
@@ -927,9 +918,10 @@ Você usou `error.statusCode` sem antes verificar `error instanceof AppError`. O
 está certo: um `Error` comum não tem esse campo. A verificação não é burocracia — é ela que
 diz ao compilador (e a você) com qual tipo de erro está lidando.
 
-**O teste do vazamento continua falhando depois do Passo 6**
-Confira se você apagou a rota `/vazamento` do `app.ts` **e** se as duas linhas
-`app.setErrorHandler` / `app.setNotFoundHandler` ficaram **antes** do `app.register`.
+**A resposta continua mostrando `cidadaos` depois do Passo 5**
+Duas causas possíveis, nesta ordem: você não reiniciou o `npm run dev` depois de salvar, ou as
+duas linhas `app.setErrorHandler` / `app.setNotFoundHandler` ficaram **depois** do
+`app.register`. Elas precisam vir antes.
 
 **`Cannot find module './app-error.ts'`**
 Falta a extensão `.ts` no import, ou o arquivo está em outra pasta. Neste projeto, **todo
@@ -943,33 +935,38 @@ estar direto na instância principal, no `buildApp()`.
 Você lançou `new Error(...)` em vez de `new AppError(...)`. Essa é justamente a proteção
 funcionando: o handler só confia na mensagem quando ela vem marcada como nossa.
 
+**O botão "Send Request" não aparece no `.http`**
+A extensão REST Client não está instalada, ou o arquivo não foi salvo com a extensão `.http`.
+O VS Code decide o que fazer com o arquivo pelo nome dele.
+
 ---
 
 ## 🏋️ Exercícios
 
-Gabarito em [`exercicios/06-gabarito.md`](./exercicios/06-gabarito.md).
+Gabarito em [`exercicios/05-gabarito.md`](./exercicios/05-gabarito.md).
 
 **1. Prove que o log recebe o que a resposta esconde**
-Crie uma rota temporária que lance um `Error` comum e suba a API com `npm run dev`. Compare o
-que aparece no **navegador** com o que aparece no **terminal**. Onde está o stack trace?
-Apague a rota depois.
+Crie de novo, temporariamente, a rota `/vazamento` no `app.ts`. Suba com `npm run dev` e
+dispare a requisição pelo `.http`. Compare o que aparece na **aba de resposta** com o que
+aparece no **terminal**. Onde está o stack trace? Onde está o nome da tabela? Apague a rota
+depois.
 
 **2. Um erro esperado de verdade**
-Crie uma rota `GET /protocolo/:numero` que lance
-`new AppError('Protocolo não encontrado', 404)` quando o número for `0`. Teste no navegador.
-A mensagem apareceu inteira? Por quê? Apague a rota depois.
+Crie uma rota `GET /protocolo/:numero` que lance `new AppError('Protocolo não encontrado', 404)`
+quando o número for `0`, e devolva `{ numero }` em qualquer outro caso. Acrescente as duas
+requisições ao `erros.http` e dispare as duas. A mensagem apareceu inteira? Por quê? Apague a
+rota e as requisições depois.
 
-**3. Escreva o teste primeiro**
-Sem escrever código de produção, adicione um teste ao `errors.spec.ts` exigindo que um
-`AppError` com código 403 responda `"error": "Forbidden"`. Rode. Ele passa ou falha? O que
-isso diz sobre o `STATUS_CODES` do Node?
+**3. O código que você não escolheu**
+Lance um `new AppError('Acesso negado', 403)` em uma rota temporária. Qual valor veio no campo
+`error` da resposta? Você escreveu essa palavra em algum lugar? O que isso diz sobre o
+`STATUS_CODES` do Node?
 
 **4. Investigue o 2º caso**
-Acrescente ao `errors.spec.ts` um teste que registre uma rota `POST /teste/eco` e envie, com
-`app.inject`, um corpo em JSON quebrado (`'{ "isto": "não fecha"'`) junto do cabeçalho
-`content-type: application/json`. Qual código voltou? A mensagem saiu inteira ou foi engolida?
-Em qual dos três casos do `errorHandler` ela caiu — e por que ela é segura? Apague o teste
-depois de responder.
+Acrescente ao `erros.http` uma requisição `POST` para `/health` com o cabeçalho
+`Content-Type: application/json` e um corpo em JSON quebrado: `{ "isto": "não fecha"`. Qual
+código voltou? A mensagem saiu inteira ou foi engolida? Em qual dos três casos do
+`errorHandler` ela caiu — e por que ela é segura mesmo saindo inteira?
 
 **5. Pergunta para responder por escrito**
 Por que o handler global foi registrado **antes** das rotas no `buildApp()`? O que aconteceria
@@ -988,23 +985,20 @@ O que ficou pronto:
 - Erro esperado e erro inesperado ficaram separados por um critério claro: quem escreveu a
   mensagem.
 - A API inteira responde erro em um formato único, inclusive o 404.
-- Oito testes de guarda, incluindo um que verifica a **ausência** de informação.
+- As requisições que provam isso ficaram versionadas, em `requisicoes/erros.http`.
 
-E um método que vale muito além desta aula: **escrever o teste antes**. Ver o teste falhar é
-o que prova que ele está testando alguma coisa. Um teste que nunca falhou é só um comentário
-que consome tempo de execução.
+E um método que vale muito além desta aula: **escreva a exigência antes**. Ver o projeto
+reprovar é o que prova que a sua exigência está conferindo alguma coisa de verdade. Uma
+verificação que nunca reprovou é só um ritual.
 
 **E agora?**
 
-Esta é a última aula desta trilha, e vale olhar para trás: em seis aulas vocês saíram de uma
-pasta vazia e chegaram a uma API que sobe, é padronizada por ferramenta, lê configuração
-validada, tem 27 testes automatizados e não conta ao mundo o que não deve.
+Repare no que ainda não temos. A API se defende bem quando **ela** falha — mas continua
+aceitando qualquer coisa que chegue de fora, e continua devolvendo o objeto que o código
+montar, campo por campo, sem ninguém conferir.
 
-O próximo passo natural é o Zod fechar as duas pontas da API: **validar o que entra** e
-**declarar o que sai**. A validação de entrada cai, de graça, no handler que acabamos de
-escrever — quando ela falhar, o erro já sai no formato certo, sem nenhuma linha nova.
+Na **Aula 06** o Zod vai fechar as duas pontas: **validar o que entra** e **declarar o que
+sai**. E a validação de entrada cai, de graça, no handler que você acabou de escrever — quando
+ela falhar, o erro já vai sair no formato certo, sem uma linha nova.
 
-Até lá, o melhor exercício é o mais simples: abra o projeto amanhã e leia o código que você
-escreveu hoje. Se estiver claro, você escreveu bem.
-
-Parabéns pela trilha concluída! 🚀
+Até a próxima! 🚀

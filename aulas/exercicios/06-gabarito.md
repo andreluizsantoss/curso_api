@@ -2,244 +2,200 @@
 
 ---
 
-## 1. Prove que o log recebe o que a resposta esconde
+## 1. Descubra o que o contrato não protege
 
-Rota temporária, dentro do `buildApp()`, logo antes do `return app`:
+Trocando `uptime: z.number()` por `uptime: z.string()` no `readinessResponseSchema`, e
+chamando `/health/ready`:
 
-```typescript
-// ⚠️ TEMPORÁRIA — apagar depois do exercício.
-app.get('/exercicio-1', async () => {
-  throw new Error("Unknown column 'cpf' in field list: SELECT * FROM cidadaos")
-})
+```
+500 {"statusCode":500,"error":"Internal Server Error","message":"Erro interno do servidor. A equipe já foi avisada."}
 ```
 
-**No navegador (`http://localhost:3333/exercicio-1`):**
+E no log do servidor, o motivo real:
 
-```json
-{
-  "statusCode": 500,
-  "error": "Internal Server Error",
-  "message": "Erro interno do servidor. A equipe já foi avisada."
-}
+```
+FST_ERR_RESPONSE_SERIALIZATION | Response doesn't match the schema
 ```
 
-**No terminal onde o `npm run dev` está rodando:**
+**A API devolveu erro.** Não converteu o número em texto, não ignorou a diferença, não
+devolveu o valor "do jeito que veio". Reprovou.
 
-```json
-{
-  "level": 50,
-  "time": 1786800000000,
-  "reqId": "req-1",
-  "err": {
-    "type": "Error",
-    "message": "Unknown column 'cpf' in field list: SELECT * FROM cidadaos",
-    "stack": "Error: Unknown column 'cpf' in field list: SELECT * FROM cidadaos\n    at ..."
-  },
-  "msg": "Erro não tratado durante a requisição"
-}
-```
+### Por que isso é a resposta certa
 
-**Onde está o stack trace:** só no terminal, dentro do campo `err.stack`.
+O contrato vale nos **dois** sentidos, e é fácil enxergar só um deles:
 
-Essa é a resposta que a aula inteira persegue. A informação **não foi perdida** — ela está
-completa, com nome de tabela, nome de coluna e a linha exata do código onde o erro nasceu. O
-que mudou foi o **canal**: ela vai para o log estruturado, que fica no servidor, e não para a
-resposta HTTP, que vai para a internet.
+| Situação                                | O que o schema faz    |
+| :-------------------------------------- | :-------------------- |
+| O código devolve um campo **a mais**    | Remove, em silêncio   |
+| O código devolve um campo **diferente** | **Recusa a resposta** |
 
-Repare também no `"level": 50`. No Pino, 50 é o nível `error`. É por isso que o log é
-estruturado: dá para pedir "me mostre tudo com level 50 da última hora" — algo impossível com
-texto solto.
+Remover o campo extra é seguro: ninguém prometeu aquilo, e tirá-lo não quebra quem consome a
+API. Já devolver `uptime` como texto quando o contrato promete número **quebraria** quem
+consome — o aplicativo do outro lado tentaria fazer conta com um texto.
 
-E repare no `reqId`. O Fastify numera cada requisição. Se o mesmo cidadão relatar "deu erro
-às 14h32", dá para achar exatamente a requisição dele e ver o erro real por trás da mensagem
-genérica que ele viu.
+### E por que o código é 500, e não 400
+
+Repare em quem errou. O `400` significa "você, cliente, mandou algo errado". Aqui o cliente
+não mandou nada: **nós** é que devolvemos fora do combinado. Erro nosso é `500`.
+
+E o cliente recebe a mensagem genérica, não o detalhe técnico — exatamente a regra que a Aula
+05 estabeleceu. O `Response doesn't match the schema` fica no log, onde a equipe procura.
+
+**Não esqueça de desfazer** a alteração no schema antes de seguir.
 
 ---
 
-## 2. Um erro esperado de verdade
+## 2. Escreva uma mensagem melhor
+
+Comparando os dois schemas com as mesmas três entradas inválidas:
 
 ```typescript
-// ⚠️ TEMPORÁRIA — apagar depois do exercício.
-app.get('/protocolo/:numero', async (request) => {
-  const { numero } = request.params as { numero: string }
+// Automático
+const automatico = z.object({ numero: z.coerce.number().int().positive() })
 
-  if (numero === '0') {
-    throw new AppError('Protocolo não encontrado', 404)
-  }
-
-  return { numero, status: 'em andamento' }
+// Com mensagens próprias
+const proprio = z.object({
+  numero: z.coerce
+    .number({ error: 'precisa ser um número' })
+    .int({ error: 'precisa ser um número inteiro, sem casas decimais' })
+    .positive({ error: 'precisa ser maior que zero' }),
 })
 ```
 
-O import no topo do `app.ts`:
+| Entrada | Mensagem automática                          | Mensagem própria                                  |
+| :------ | :------------------------------------------- | :------------------------------------------------ |
+| `"abc"` | Tipo inválido: esperado número, recebido NaN | precisa ser um número                             |
+| `"-5"`  | Muito pequeno: esperado que number fosse >0  | precisa ser maior que zero                        |
+| `"3.7"` | Tipo inválido: esperado int, recebido número | precisa ser um número inteiro, sem casas decimais |
 
-```typescript
-import { AppError } from './shared/errors/app-error.ts'
-```
+### Quando vale o trabalho
 
-**Acessando `http://localhost:3333/protocolo/0`:**
+**A mensagem automática é boa o suficiente quando quem lê é programador.** Ela é precisa e
+diz exatamente o que a ferramenta esperava. Numa rota interna, consumida por outro sistema,
+não há razão para escrever nada.
 
-```json
-{
-  "statusCode": 404,
-  "error": "Not Found",
-  "message": "Protocolo não encontrado"
-}
-```
+**A mensagem própria vale quando um ser humano vai ler.** Compare as duas da linha do meio:
 
-**A mensagem apareceu inteira. Por quê?**
+- _"Muito pequeno: esperado que number fosse >0"_ — mistura português com inglês, usa `>0` e
+  fala de "number", que é o nome do tipo na linguagem.
+- _"precisa ser maior que zero"_ — qualquer pessoa entende.
 
-Porque o handler perguntou `error instanceof AppError` e a resposta foi sim. Ao escrever
-`new AppError(...)`, quem programou a rota assumiu a responsabilidade pela mensagem: ela foi
-escrita em português, pensando em quem vai lê-la, e não contém nada sobre a estrutura interna
-do sistema.
+Se essa mensagem for aparecer na tela de um cidadão preenchendo um formulário, a segunda é a
+única aceitável.
 
-Compare com o exercício 1: a mensagem do MySQL foi engolida porque veio marcada como um
-`Error` comum, e um `Error` comum pode conter qualquer coisa.
-
-**A régua, em uma frase:** o handler não julga o conteúdo da mensagem — ele julga a
-**procedência** dela. Julgar conteúdo exigiria adivinhar; julgar procedência é uma
-verificação de uma linha, que nunca erra.
-
-> Um detalhe do `request.params as { numero: string }`: essa conversão manual existe porque a
-> rota ainda não tem schema. Quando a rota ganhar um, o `as` desaparece — o Zod passa a
-> inferir o tipo sozinho, e o TypeScript sabe que `numero` é texto sem ninguém prometer.
+**A regra prática:** escreva a sua mensagem nos campos que vêm de formulário, e deixe a
+automática nos campos que só outro sistema envia.
 
 ---
 
-## 3. Escreva o teste primeiro
+## 3. Duas violações de uma vez
 
-O teste, acrescentado ao bloco `describe('AppError')`:
-
-```typescript
-it('traduz o código 403 para "Forbidden"', async () => {
-  const app = buildApp({ logger: false })
-
-  app.get('/teste/proibido', async () => {
-    throw new AppError('Acesso negado', 403)
-  })
-
-  const resposta = await app.inject({ method: 'GET', url: '/teste/proibido' })
-
-  expect(resposta.statusCode).toBe(403)
-  expect(resposta.json().error).toBe('Forbidden')
-
-  await app.close()
-})
-```
-
-**Ele passa — de primeira, sem escrever nenhuma linha de código de produção.**
-
-E é isso que o exercício queria mostrar. O `montarResposta` nunca soube o que é 403:
-
-```typescript
-error: STATUS_CODES[statusCode] ?? 'Error',
-```
-
-O `STATUS_CODES` do `node:http` é a tabela oficial e **completa** do protocolo. Ela já
-contém os 60 e poucos códigos que existem, do 100 ao 511. Escrevemos a linha uma vez e ela
-funciona para todos, inclusive para códigos que ninguém deste projeto vai usar.
-
-**A lição:** quando você usa a solução que a plataforma já traz, ganha os casos que nem
-pensou em cobrir. Se tivéssemos escrito a nossa tabela à mão, ela teria os 4 ou 5 códigos que
-lembramos no dia — e o 403 seria um bug esperando alguém precisar dele.
-
-> Este é também um exemplo de teste que **passa de primeira** no ciclo do TDD. Não é uma
-> falha do método: é a resposta "essa exigência já está atendida". O que não pode acontecer é
-> você **presumir** isso sem rodar.
-
----
-
-## 4. Investigue o 2º caso
-
-O teste:
-
-```typescript
-it('devolve a mensagem do Fastify quando o corpo não é um JSON válido', async () => {
-  const app = buildApp({ logger: false })
-
-  app.post('/teste/eco', async (request) => request.body)
-
-  const resposta = await app.inject({
-    method: 'POST',
-    url: '/teste/eco',
-    headers: { 'content-type': 'application/json' },
-    payload: '{ "isto": "não fecha"',
-  })
-
-  expect(resposta.statusCode).toBe(400)
-
-  await app.close()
-})
-```
-
-**Resposta obtida:**
+Com uma rota que valida `params` **e** `querystring`, chamando
+`/exemplo/protocolo/abc?formato=medio` — onde os dois estão errados:
 
 ```json
 {
   "statusCode": 400,
   "error": "Bad Request",
-  "message": "Body is not valid JSON but content-type is set to 'application/json'"
+  "message": "Dados inválidos no endereço: numero — Tipo inválido: esperado número, recebido NaN"
 }
 ```
 
-**A mensagem saiu inteira**, e caiu no **2º caso** —
-`error.statusCode !== undefined && error.statusCode < 500`.
+**Só o primeiro problema aparece.** A `querystring` inválida não é mencionada.
 
-**Justificativa:** quem lançou esse erro foi o próprio Fastify, ao tentar interpretar o corpo
-da requisição antes de entregá-la à rota. Ele marcou o erro com `statusCode: 400`, que na
-especificação do HTTP significa literalmente _"o problema está do seu lado"_.
+### Por que o Fastify para no primeiro
 
-E leia o que a mensagem diz: ela fala **exclusivamente sobre o que o cliente acabou de
-enviar** — o corpo dele e o cabeçalho dele. Não revela nome de tabela, caminho de arquivo nem
-versão de biblioteca. Devolvê-la é seguro, e é útil: é ela que permite a quem integrou o
-sistema descobrir sozinho que esqueceu uma chave.
+Ele valida as partes da requisição **em sequência**: `params`, depois `querystring`, depois
+`body`, depois `headers`. Na primeira que falha, ele interrompe e devolve o erro — as
+seguintes nem chegam a ser verificadas.
 
-> **Por que a rota do teste precisou ser `POST`?**
->
-> Porque o Fastify decide a rota **antes** de interpretar o corpo. Se você tivesse mandado o
-> mesmo JSON quebrado para `POST /health`, a resposta seria **404** — a rota `/health` só
-> existe para `GET`, e o Fastify nem chegaria a olhar o corpo. É exatamente o que o último
-> teste do `errors.spec.ts` verifica.
+Repare no nosso handler: a função `montarMensagemDeValidacao` usa `error.validationContext`,
+no singular. Não existe plural ali, porque o Fastify só informa **um** contexto por resposta.
 
-**O detalhe que vale guardar:** este caso é a razão de o `errorHandler` ter três ramos, e não
-dois. Com apenas "é nosso / não é nosso", toda mensagem do Fastify viraria um 500 genérico, e
-quem consome a API perderia a única informação que realmente o ajudaria a se corrigir.
+### Isso é um problema?
+
+Depende de quem está do outro lado.
+
+- **Para outro sistema:** não. Ele corrige, tenta de novo, e descobre o segundo erro.
+- **Para uma pessoa preenchendo um formulário:** sim, e bastante. Corrigir um campo, enviar,
+  descobrir outro erro, corrigir, enviar de novo é uma experiência ruim.
+
+Dentro de um mesmo contexto, porém, **todos** os campos errados aparecem juntos — é por isso
+que a função monta a lista com `campos.join('; ')`. Se dois campos do corpo estiverem errados,
+os dois são citados.
+
+Na prática, formulários mandam tudo no `body`, que é um contexto só. O caso do exercício —
+errar o endereço e a query ao mesmo tempo — é mais raro do que parece.
 
 ---
 
-## 5. Pergunta para responder por escrito
+## 4. O contrato como documentação
 
-**Por que o handler global foi registrado antes das rotas?**
+Lendo apenas o `health.schema.ts`:
 
-Por causa da ordem em que o Fastify monta as coisas. O `setErrorHandler` vale para o escopo
-em que foi registrado e para tudo o que é registrado **depois** dele. Colocando-o no topo do
-`buildApp()`, ele passa a valer para o `healthRoutes` e para todo módulo que vier no futuro.
+- A rota de prontidão devolve **quatro** campos: `status`, `uptime`, `timestamp`,
+  `environment`.
+- O `environment` aceita exatamente três valores: `development`, `test` e `production`.
 
-Se ele fosse registrado depois das rotas, o comportamento passaria a depender da posição da
-linha em um arquivo — e "funciona se você colocar na ordem certa" é o tipo de regra que
-ninguém lembra na segunda vez.
+Você respondeu isso em alguns segundos, sem abrir o service, sem rodar a API, sem ler nenhum
+`if`.
 
-**E se alguém criasse um módulo novo e esquecesse de tratar erros dentro dele?**
+### O ganho que não é óbvio
 
-**Nada de ruim aconteceria.** É exatamente esse o ponto.
+Para descobrir o mesmo lendo o service, seria preciso: encontrar o método certo, ler o objeto
+devolvido, seguir de onde vem cada valor, e ainda abrir `env.schema.ts` para descobrir quais
+valores `NODE_ENV` aceita. Quatro arquivos para uma pergunta simples.
 
-O módulo novo é registrado através do `buildApp()`, que é o único caminho por onde uma rota
-entra nesta API. E o `buildApp()` já ligou o handler antes. A rota nasce protegida sem que
-quem a escreveu precise saber que o handler existe.
+O schema responde porque ele **é** a resposta — não uma descrição da resposta, escrita à parte
+e sujeita a envelhecer.
 
-Compare com o outro desenho possível — um `try/catch` dentro de cada rota:
+> **A diferença que importa:** documentação escrita à mão descreve o que alguém acreditava que
+> o código fazia, no dia em que escreveu. O schema **é** o que o código faz — se ele mentir, a
+> requisição falha na hora.
 
-|                           | Centralizado (o nosso) | Espalhado (`try/catch` por rota) |
-| :------------------------ | :--------------------- | :------------------------------- |
-| Rota nova está protegida? | Sempre                 | Só se a pessoa lembrar           |
-| Mudar o formato do erro   | Um arquivo             | Todos os arquivos                |
-| Uma rota esquecida        | Impossível             | Vaza, e ninguém percebe          |
-| Código de tratamento      | 1 lugar                | Repetido em cada rota            |
+Guarde esta ideia. Ela é a razão de ser possível, mais adiante na trilha, gerar uma
+documentação navegável da API inteira a partir destes mesmos schemas, sem ninguém escrever
+uma linha de documentação.
 
-A diferença não é de estilo, é de **garantia**. Um sistema espalhado depende de disciplina
-humana, e disciplina humana falha exatamente no dia de pressa. Um sistema centralizado
-depende da estrutura, que não tem dia ruim.
+---
 
-A lição vale muito além do tratamento de erro: **quando a proteção depende de alguém
-lembrar, ela já falhou** — só ainda não descobrimos quando.
+## 5. A ordem dos casos importa
+
+Movendo o `FST_ERR_VALIDATION` para depois do `statusCode < 500` e chamando
+`/exemplo/protocolo/abc`:
+
+```json
+{
+  "statusCode": 400,
+  "error": "Bad Request",
+  "message": "params/numero Tipo inválido: esperado número, recebido NaN"
+}
+```
+
+**A mensagem voltou ao formato com barra.** O nosso tratamento sumiu.
+
+### Por quê
+
+Um erro de validação do Fastify **também** tem `statusCode: 400`. Ou seja, ele satisfaz as
+duas condições:
+
+```typescript
+error.code === 'FST_ERR_VALIDATION' // verdadeiro
+error.statusCode < 500 // verdadeiro também
+```
+
+Numa sequência de `if` com `return`, **quem chega primeiro ganha**. Ao mover o caso
+específico para depois do caso genérico, o genérico passa a capturar tudo, e o específico vira
+código morto — que continua lá, compilando, passando no lint, e sem nunca executar.
+
+### A regra que fica
+
+**Em uma cadeia de condições, o caso mais específico vem primeiro.** É a mesma lógica de uma
+triagem: quem separa por "qualquer problema abaixo de 500" antes de perguntar "é problema de
+validação?" nunca vai chegar à segunda pergunta.
+
+E repare no que torna esse defeito perigoso: **nada acusa**. O código compila, o lint passa, a
+API responde 400 como deveria. A única diferença é a qualidade da mensagem — que é exatamente
+o tipo de coisa que ninguém percebe até um integrador reclamar.
+
+**Desfaça a alteração** e confira que a mensagem voltou ao formato em português, sem barra.

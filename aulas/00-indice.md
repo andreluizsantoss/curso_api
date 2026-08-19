@@ -1,8 +1,8 @@
-# Índice do Curso — API do Curso
+# Índice do Curso — API com Node.js, TypeScript e Fastify
 
 Bem-vindos. 👋
 
-Este não é um curso de exercício jogado fora no fim. Vocês vão construir uma API completa,
+Este não é um curso de exercício jogado fora no fim. Vocês vão construir uma API de verdade,
 tratada com o **rigor de um sistema em produção**: segurança, qualidade e cada decisão
 explicada, nunca apenas aplicada. É esse rigor que separa quem sabe fazer de quem sabe
 copiar.
@@ -26,70 +26,49 @@ Montar o projeto e as ferramentas que sustentam todo o resto.
 - [ ] **[03 — Padronizando o código](./03-padronizando-o-codigo.md)**
       ESLint e Prettier: fazer o computador cuidar da qualidade e da aparência do código.
 
-## Fase B — Qualidade e robustez
+## Fase B — O que a API promete, e o que ela esconde
 
-Transformar "funciona na minha máquina" em código que aguenta o mundo real.
+Sair de "funciona quando tudo dá certo" e passar a cuidar das bordas: a configuração, a falha
+e as duas portas por onde os dados entram e saem.
 
 - [ ] **[04 — Variáveis de ambiente com Zod](./04-variaveis-de-ambiente.md)**
       Tirar configuração de dentro do código e falhar rápido quando ela estiver errada.
-- [ ] **[05 — Testes automatizados com Vitest](./05-testes-automatizados.md)**
-      Fazer o computador conferir se a API funciona, em vez de testar na mão toda vez.
-- [ ] **[06 — Tratamento centralizado de erros](./06-tratamento-de-erros.md)**
+- [ ] **[05 — Tratamento centralizado de erros](./05-tratamento-de-erros.md)**
       Responder erro de forma consistente, sem nunca vazar detalhe interno para quem chamou.
-- [ ] **[07 — Validação de entrada e contrato de resposta](./07-validacao-e-contrato.md)**
+- [ ] **[06 — Validação de entrada e contrato de resposta](./06-validacao-e-contrato.md)**
       Nunca confiar no que chega de fora, e devolver exatamente o que foi combinado.
-
-## Fase C — Abrindo a API para o mundo
-
-Deixar de ser um projeto que roda na sua máquina e passar a ser um serviço que outras pessoas
-conseguem usar — e que aguenta ser usado.
-
-- [ ] **[08 — Documentação viva com Swagger](./08-documentacao-da-api.md)**
-      Gerar, a partir dos schemas que você já escreveu, uma documentação navegável que não
-      consegue ficar desatualizada.
-- [ ] **[09 — Segurança HTTP](./09-seguranca-http.md)**
-      Derrubar a própria API com cinco linhas, e depois impedir isso — com limite de
-      requisições, controle de origem e os cabeçalhos que o navegador respeita.
-- [ ] **[10 — Docker: empacotando a API](./10-docker.md)**
-      Acabar com o "na minha máquina funciona": código, dependências e a versão exata do Node
-      dentro de um pacote só, que sobe com um comando em qualquer computador.
-- [ ] **[11 — Produção de verdade: desligamento, proxy e logs](./11-producao-de-verdade.md)**
-      Fazer a API terminar o que começou antes de morrer, descobrir com quem ela realmente
-      está falando atrás de um proxy, e garantir que nenhum segredo vá parar no log.
-- [ ] **[12 — Docker Compose: o ambiente completo](./12-docker-compose.md)**
-      Descrever o ambiente inteiro — API e banco de dados — em um arquivo versionado, e
-      descobrir por que "o container subiu" não significa "o serviço está pronto".
-- [ ] **[13 — Banco de dados: Prisma, MySQL e a camada Repository](./13-banco-de-dados.md)**
-      Fazer a API guardar dado de verdade, com a estrutura do banco versionada em migrations
-      e testes rodando contra um MySQL de verdade, sem destruir o banco de trabalho.
-- [ ] **[14 — Migrations em produção](./14-migrations-em-producao.md)**
-      Alterar a estrutura de um banco que não pode parar: o padrão expande/contrai, o que
-      fazer quando a migration falha no meio, e o backup que você provou que restaura.
-- [ ] **[15 — Negócio e versionamento](./15-negocio-e-versionamento.md)**
-      A primeira rota que existe para alguém de fora: um cadastro de pessoa desenhado campo a
-      campo, exclusão que não apaga ninguém, e o endereço `/api/v1` que sobrevive à mudança.
 
 ---
 
-## O que vem depois
+## Onde esta trilha termina, e por quê
 
-Esta trilha termina na Aula 15, com uma API que sobe, é padronizada por ferramenta, lê
-configuração validada, tem testes automatizados, não vaza informação interna, não confia no
-que chega de fora, se documenta sozinha, se defende de quem abusa dela, roda igual em
-qualquer máquina, morre sem cortar a requisição de ninguém, registra sem entregar segredo e
-traz o ambiente inteiro de pé com um comando só e guarda dado em um banco cuja estrutura é
-versionada junto com o código, sabe alterar essa estrutura sem derrubar ninguém — e que, por
-fim, faz alguma coisa: mantém um cadastro de cidadão sob um endereço versionado, decidindo o
-que guarda, o que devolve e o que nunca devolve.
+Seis aulas. Ao final delas você tem uma API que sobe, é padronizada por ferramenta, lê
+configuração validada, não vaza informação interna quando algo falha, não confia no que chega
+de fora e devolve exatamente o que o contrato declara.
 
-Os assuntos abaixo continuam a construção. Não são "opcionais" — são os próximos degraus, e
-cada um só faz sentido depois de você ter sentido a dor que ele resolve:
+**Isso é um assunto inteiro fechado**, e é onde a trilha para por enquanto.
 
-| Assunto                  | A dor que resolve                                                |
-| :----------------------- | :--------------------------------------------------------------- |
-| Autenticação com JWT     | Qualquer um acessa qualquer coisa                                |
-| Integração contínua      | Nada garante que alguém rodou os testes antes de enviar o código |
-| Branches e Pull Requests | Todo mundo envia direto para a `main`, sem ninguém revisar       |
+Não para porque acabou o material. Para porque o que vem depois — fazer o computador testar a
+API sozinho, gerar documentação a partir do código, defender a API de quem abusa dela,
+empacotá-la em container, guardar dado em banco — só faz sentido depois que estas seis
+estiverem firmes. Cada um desses assuntos resolve uma dor que você ainda não sentiu, e aula
+que resolve dor que ninguém sentiu vira decoreba.
+
+Quando estas seis estiverem sólidas — e "sólidas" quer dizer que você consegue explicar cada
+arquivo do seu projeto para outra pessoa —, a trilha continua. A ordem já está definida:
+
+| Próximos degraus              | A dor que resolve                                               |
+| :---------------------------- | :-------------------------------------------------------------- |
+| Testes automatizados          | Conferir tudo na mão a cada alteração, e um dia esquecer        |
+| Documentação viva             | Ninguém de fora sabe quais rotas existem nem o que elas aceitam |
+| Segurança HTTP                | Um script de dez linhas derruba a API                           |
+| Empacotamento em container    | "Na minha máquina funciona" — rodar em outro computador dói     |
+| Desligamento, proxy e logs    | A API morre no meio da requisição, e o log guarda segredo       |
+| Ambiente completo por comando | Subir tudo depende de alguém lembrar a ordem certa              |
+| Banco de dados                | A API não guarda nada                                           |
+| Alterar banco em produção     | Mudar tabela com dado de gente dentro não perdoa improviso      |
+| Rota de negócio e versão      | A API só sabe dizer que está viva                               |
+| Autenticação                  | Qualquer um acessa qualquer coisa                               |
 
 ---
 
@@ -99,6 +78,10 @@ cada um só faz sentido depois de você ter sentido a dor que ele resolve:
 | :--------------------------- | :------------------------------------------------ |
 | [Glossário](../GLOSSARIO.md) | Todo termo técnico explicado em linguagem simples |
 | [Exercícios](./exercicios/)  | Gabaritos comentados dos desafios de cada aula    |
+
+O glossário cobre a trilha inteira, inclusive termos que só aparecem nos degraus seguintes.
+Encontrar ali uma palavra que nenhuma aula sua usou ainda é normal — não é sinal de que você
+pulou alguma coisa.
 
 ---
 

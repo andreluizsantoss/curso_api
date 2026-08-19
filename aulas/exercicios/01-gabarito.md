@@ -113,9 +113,8 @@ de trabalho entre duas ferramentas:
 **A lição:** a tipagem te avisa **antes de o código chegar ao cidadão**, mas quem dá esse
 aviso é o **editor** (o sublinhado vermelho, na hora em que você digita) e o **`npm run
 build`** — nunca o servidor de desenvolvimento. Por isso o `build` não é opcional: é ele que
-decide se o código pode ou não ir para produção. Na Aula 06 nós vamos colocar esse mesmo
-`build` para rodar automaticamente a cada envio de código, para que ninguém consiga publicar
-uma versão que não compila.
+decide se o código pode ou não ir para produção. Rodar o `build` antes de dar o trabalho por
+pronto é o que impede uma versão que não compila de virar o problema de outra pessoa.
 
 ---
 
@@ -157,10 +156,9 @@ com a configuração certa em cada lugar.
 Resposta esperada, com suas palavras:
 
 > Porque assim o controller não fica preso a uma implementação específica. Ele declara o que
-> precisa e alguém de fora decide o que entregar. Nos testes, podemos entregar um service
-> falso que devolve dados controlados, e verificar o controller sozinho, sem depender do
-> comportamento real. Se o controller criasse o service com `new` lá dentro, não haveria como
-> trocar, e testar as duas coisas separadamente seria impossível.
+> precisa e alguém de fora decide o que entregar. Se o controller criasse o service com
+> `new` lá dentro, os dois ficariam colados: trocar a implementação do service exigiria
+> abrir o controller, e usar o controller com outro service seria impossível.
 
 **Um detalhe a mais:** repare que o `HealthController` importa o `HealthService` com
 `import type`. Isso é uma pista forte da arquitetura — ele conhece apenas o **formato** do

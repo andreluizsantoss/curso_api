@@ -302,8 +302,8 @@ Crie a pasta `src/shared/env/` e, dentro dela, o arquivo `env.schema.ts`:
  * variáveis existem, de que tipo cada uma é e qual o valor padrão quando ela não
  * for informada.
  *
- * Manter o contrato separado da validação (`index.ts`) permite reutilizá-lo nos
- * testes, onde queremos validar um objeto montado à mão em vez do ambiente real.
+ * Manter o contrato separado da validação (`index.ts`) permite usá-lo sobre
+ * qualquer objeto, e não só sobre o ambiente real da máquina.
  */
 
 import { z } from 'zod'
@@ -377,7 +377,6 @@ export type Env = z.infer<typeof envSchema>
   e no `.min(1)`. Não é redundância. Cada um cobre uma situação diferente: o primeiro vale
   quando a variável **não veio** ou veio com o tipo errado; o segundo, quando ela veio mas
   está **vazia**. Sem o primeiro, esse caso cairia na mensagem padrão do Zod, que é em inglês.
-  Na Aula 05 vamos escrever um teste que confere justamente isso.
 - **`z.coerce.number()`** — _coerce_ significa "converter à força". Toda variável de ambiente
   chega como **texto**, então precisamos converter para número antes de validar. **É aqui que
   o bug do Capítulo 1 morre:** `"8O80"` vira `NaN` na conversão, e o Zod recusa `NaN`.
@@ -551,8 +550,8 @@ Abra `src/server.ts` e deixe **exatamente** assim:
  * Este arquivo é responsável APENAS por iniciar o servidor HTTP na porta
  * configurada. Toda a montagem do Fastify (plugins e rotas) está em `app.ts`.
  *
- * Essa separação permite que, nos testes automatizados, importemos apenas o
- * `app.ts` sem precisar abrir uma porta de rede real.
+ * Essa separação mantém a montagem da aplicação independente da rede: o
+ * `app.ts` pode ser montado inteiro sem que nenhuma porta seja aberta.
  */
 
 import { buildApp } from './app.ts'
@@ -995,14 +994,15 @@ E, mais importante que qualquer linha de código: o hábito de **falhar rápido 
 
 **E agora?**
 
-Repare em uma coisa. Nesta aula, para saber se tudo continuava funcionando, você precisou
-subir o servidor e conferir na mão. De novo. Igual nas três aulas anteriores.
+Repare em uma coisa. Todas as quatro aulas até aqui cuidaram do caminho em que **tudo dá
+certo**: a API sobe, a configuração está correta, a rota responde.
 
-Imagine isso com trinta rotas, e com um prazo em cima. Ninguém testa trinta rotas
-manualmente a cada alteração — e é exatamente aí que os bugs passam.
+Nenhuma delas perguntou o que acontece quando algo falha. E a resposta, hoje, é: acontece o
+que o Fastify decidir — que é devolver a mensagem crua da exceção para quem quer que tenha
+feito a requisição.
 
-Na **Aula 05** vamos ensinar o computador a testar a API sozinho. E é lá que aquela separação
-entre `app.ts` e `server.ts`, que fizemos lá atrás na Aula 01 sem explicar direito o motivo,
-finalmente vai mostrar para que serve.
+Na **Aula 05** vamos ver, com os próprios olhos, o que essa mensagem crua entrega de graça
+para quem está do outro lado. E depois vamos calar a boca da API sem deixar de avisar a
+equipe.
 
 Até a próxima! 🚀
